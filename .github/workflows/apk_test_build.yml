@@ -1,6 +1,7 @@
-name: APK test build (safe-svg font-face fix)
+name: Signed APK build (safe-svg font-face fix)
 
-# Test-only debug APK for the fork. Not meant for upstream.
+# Signed release-like (regression) APK for the fork. Not meant for upstream.
+# Package: com.debank.rabbymobile.regression, so it installs next to the official app.
 on:
   push:
     branches:
@@ -21,6 +22,9 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      RABBY_MOBILE_BUILD_ENV: regression
+      SENTRY_DISABLE_AUTO_UPLOAD: 'true'
     steps:
       - name: Free disk space
         run: |
@@ -28,6 +32,18 @@ jobs:
             /usr/share/swift /usr/local/share/powershell /usr/local/share/chromium /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force || true
           df -h /
+
+      - name: Check signing secrets
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          SP: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KP: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KA: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RC: ${{ secrets.RABBY_MOBILE_CODE }}
+        run: |
+          for v in KS SP KP KA RC; do
+            if [ -z "${!v}" ]; then echo "::error::missing signing secret ($v)"; exit 1; fi
+          done
 
       - uses: actions/checkout@v4
 
@@ -67,22 +83,29 @@ jobs:
           sh ./scripts/fns.sh reset_builtin_assets
           yarn buildworker:prod:android
 
-      - name: Bundle JS into the debug APK (test build only)
+      - name: Assemble signed regression APK (arm64-v8a)
         working-directory: apps/mobile/android
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          RABBY_MOBILE_CODE: ${{ secrets.RABBY_MOBILE_CODE }}
+          RABBY_MOBILE_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          RABBY_MOBILE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RABBY_MOBILE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          sed -i 's|^    // debuggableVariants = \["liteDebug", "prodDebug"\]|    debuggableVariants = []|' app/build.gradle
-          grep -n '^    debuggableVariants = \[\]' app/build.gradle
-
-      - name: Assemble debug APK (arm64-v8a)
-        working-directory: apps/mobile/android
-        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
+          export RABBY_MOBILE_ANDROID_STORE_FILE="$RUNNER_TEMP/rabby-fork.keystore"
+          printf %s "$KS" | base64 -d > "$RABBY_MOBILE_ANDROID_STORE_FILE"
+          ./gradlew assembleRegression -PreactNativeArchitectures=arm64-v8a --no-daemon
+          rm -f "$RABBY_MOBILE_ANDROID_STORE_FILE"
 
       - name: Collect APK
         id: apk
         run: |
-          src=$(find apps/mobile/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          src=$(find apps/mobile/android/app/build/outputs/apk/regression -name '*.apk' | head -n 1)
           test -n "$src"
-          out="rabby-mobile-safe-svg-fontface-${GITHUB_SHA::7}-arm64-debug.apk"
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$apksigner" verify --print-certs "$src" | tee signer.txt
+          grep -q "Signer #1 certificate DN: CN=Rabby fork test build" signer.txt
+          out="rabby-mobile-safe-svg-fontface-${GITHUB_SHA::7}-arm64-signed.apk"
           cp "$src" "$out"
           ls -lh "$out"
           echo "path=$out" >> "$GITHUB_OUTPUT"
@@ -96,8 +119,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="apk-test-${GITHUB_SHA::7}"
+          tag="apk-signed-${GITHUB_SHA::7}"
           gh release create "$tag" "${{ steps.apk.outputs.path }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Test APK: safe-svg @font-face fix (${GITHUB_SHA::7})" \
-            --notes "Debug APK (arm64-v8a) built from branch apk-build. It includes the fix from fix/safe-svg-strip-font-face. It is signed with React Native's public debug key and installs next to Rabby as a separate app (package suffix .debug). Use it for testing only."
+            --title "Signed APK: safe-svg @font-face fix (${GITHUB_SHA::7})" \
+            --notes "Release-like (regression) APK, arm64-v8a, built from branch apk-build with the fix from fix/safe-svg-strip-font-face. Signed with the fork owner's own key. Package com.debank.rabbymobile.regression: it installs next to the official Rabby app. Unofficial build: no Play Store auto-updates."
