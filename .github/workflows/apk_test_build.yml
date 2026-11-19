@@ -1,0 +1,103 @@
+name: APK test build (safe-svg font-face fix)
+
+# Test-only debug APK for the fork. Not meant for upstream.
+on:
+  push:
+    branches:
+      - apk-build
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-test-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/.ghcup \
+            /usr/share/swift /usr/local/share/powershell /usr/local/share/chromium /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Rust toolchain from rust-toolchain.toml
+        working-directory: packages/react-native-fs/rust/safe-svg
+        run: |
+          rustup toolchain install
+          cargo --version
+          cargo test --release
+
+      - name: Install JS dependencies
+        run: |
+          corepack enable
+          yarn install
+
+      - name: Build workspace packages
+        run: yarn build
+
+      - name: Prepare Android JS assets
+        working-directory: apps/mobile
+        run: |
+          . ./scripts/fns.sh --source-only
+          ensure_inpage_bridge_assets
+          yarn check-nodeengines
+          yarn ../mobile-local-pages make-theme
+          yarn ../mobile-local-pages build --mode android
+          yarn react-native-asset
+          sh ./scripts/fns.sh reset_builtin_assets
+          yarn buildworker:prod:android
+
+      - name: Bundle JS into the debug APK (test build only)
+        working-directory: apps/mobile/android
+        run: |
+          sed -i 's|^    // debuggableVariants = \["liteDebug", "prodDebug"\]|    debuggableVariants = []|' app/build.gradle
+          grep -n '^    debuggableVariants = \[\]' app/build.gradle
+
+      - name: Assemble debug APK (arm64-v8a)
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
+
+      - name: Collect APK
+        id: apk
+        run: |
+          src=$(find apps/mobile/android/app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          test -n "$src"
+          out="rabby-mobile-safe-svg-fontface-${GITHUB_SHA::7}-arm64-debug.apk"
+          cp "$src" "$out"
+          ls -lh "$out"
+          echo "path=$out" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rabby-apk
+          path: ${{ steps.apk.outputs.path }}
+
+      - name: Publish release on the fork
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="apk-test-${GITHUB_SHA::7}"
+          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Test APK: safe-svg @font-face fix (${GITHUB_SHA::7})" \
+            --notes "Debug APK (arm64-v8a) built from branch apk-build. It includes the fix from fix/safe-svg-strip-font-face. It is signed with React Native's public debug key and installs next to Rabby as a separate app (package suffix .debug). Use it for testing only."
