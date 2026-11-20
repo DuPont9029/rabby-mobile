@@ -787,6 +787,11 @@ export default function AppNavigation() {
                     options={mergeScreenOptions({
                       headerShown: true,
                       headerTitle: 'Solana',
+                      headerTransparent: false,
+                      headerShadowVisible: false,
+                      headerStyle: {
+                        backgroundColor: colors['neutral-bg1'],
+                      },
                     })}
                   />
                   <RootStack.Screen
@@ -795,6 +800,11 @@ export default function AppNavigation() {
                     options={mergeScreenOptions({
                       headerShown: true,
                       headerTitle: 'Solana',
+                      headerTransparent: false,
+                      headerShadowVisible: false,
+                      headerStyle: {
+                        backgroundColor: colors['neutral-bg1'],
+                      },
                     })}
                   />
                   <RootStack.Screen
@@ -803,6 +813,11 @@ export default function AppNavigation() {
                     options={mergeScreenOptions({
                       headerShown: true,
                       headerTitle: 'Solana NFT',
+                      headerTransparent: false,
+                      headerShadowVisible: false,
+                      headerStyle: {
+                        backgroundColor: colors['neutral-bg1'],
+                      },
                     })}
                   />
                   <RootStack.Screen
