@@ -40,7 +40,7 @@
     },
     "authentication": {
       "auth_prompt_cancel": "Hủy",
-      "auth_prompt_desc": "Vui lòng xác thực để sử dụng Rabby",
+      "auth_prompt_desc": "Vui lòng xác thực để sử dụng Helios",
       "auth_prompt_title": "Yêu cầu xác thực"
     }
   },
@@ -50,7 +50,7 @@
     "next": "Tiếp theo",
     "backButton": "Quay lại",
     "cancelButton": "Hủy",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "refresh": "Làm mới",
     "confirm": "Xác nhận",
     "unknownNFT": "NFT không xác định",
@@ -226,7 +226,7 @@
       "alreadyHaveAddress": "Tôi đã có một ví",
       "createNewAddress": "Tạo Ví Mới",
       "alreadyUseRabby": "Tôi đang dùng Rabby",
-      "welcomeTitle": "Chào mừng đến với\nRabby Wallet"
+      "welcomeTitle": "Chào mừng đến với\nHelios Wallet"
     },
     "importSeedPhrase": {
       "enterYourSeedPhrase": "Nhập cụm từ khôi phục, phân cách từng từ bằng dấu cách"
@@ -1004,7 +1004,7 @@
       "quickAddressTitle_other": "{{count}} địa chỉ",
       "quickAddressTitle_one": "{{count}} địa chỉ",
       "add-address": "Thêm ví",
-      "delete-checklist-1": "Tôi hiểu rằng nếu xóa ví này, khóa riêng tư và cụm từ khôi phục tương ứng sẽ bị xóa, và Rabby sẽ KHÔNG thể khôi phục chúng.",
+      "delete-checklist-1": "Tôi hiểu rằng nếu xóa ví này, khóa riêng tư và cụm từ khôi phục tương ứng sẽ bị xóa, và Helios sẽ KHÔNG thể khôi phục chúng.",
       "delete-private-key-title": "Xóa ví và khóa riêng tư",
       "delete-seed-phrase-title": "Xóa ví và cụm từ khôi phục",
       "delete-title": "Xóa ví"
@@ -1016,7 +1016,7 @@
       "settings": {
         "enableWhitelist": "Bật danh sách cho phép",
         "cancel": "Hủy",
-        "enableWhitelistTip": "Sau khi bật, bạn chỉ có thể dùng Rabby để gửi tài sản đến địa chỉ trong danh sách cho phép.",
+        "enableWhitelistTip": "Sau khi bật, bạn chỉ có thể dùng Helios để gửi tài sản đến địa chỉ trong danh sách cho phép.",
         "disableWhitelist": "Tắt danh sách cho phép",
         "disableWhitelistTip": "Sau khi tắt, bạn có thể gửi tài sản đến bất kỳ địa chỉ nào"
       },
@@ -1053,7 +1053,7 @@
         "importAddress": "Nhập ví",
         "selectAddMethod": "Chọn phương thức thêm",
         "seedPhraseOrPrivateKey": "Cụm từ khôi phục hoặc khóa riêng tư",
-        "restoreRabbyWallet": "Khôi phục Rabby Wallet",
+        "restoreRabbyWallet": "Khôi phục Helios Wallet",
         "moreOptions": "Thêm tùy chọn"
       },
       "importAddress": {
@@ -1061,10 +1061,10 @@
         "privateKey": "Nhập khóa riêng tư",
         "seedPhrase": "Nhập cụm từ khôi phục",
         "tips": {
-          "entry": "Có an toàn khi nhập vào Rabby không?",
+          "entry": "Có an toàn khi nhập vào Helios không?",
           "gotIt": "Tôi đã hiểu",
-          "title": "Có an toàn để nhập vào Rabby không?",
-          "description": "Dữ liệu của bạn được mã hóa an toàn và lưu trữ cục bộ trên thiết bị của bạn. Rabby không có quyền truy cập vào thông tin cá nhân của bạn và thông tin đó không bao giờ được chia sẻ với bên thứ ba."
+          "title": "Có an toàn để nhập vào Helios không?",
+          "description": "Dữ liệu của bạn được mã hóa an toàn và lưu trữ cục bộ trên thiết bị của bạn. Helios không có quyền truy cập vào thông tin cá nhân của bạn và thông tin đó không bao giờ được chia sẻ với bên thứ ba."
         },
         "watch": "Ví chỉ xem",
         "safeTitle": "Nhập ví Safe",
@@ -1158,7 +1158,7 @@
           "yes": "Có",
           "title": "Bật {{ bioType }}",
           "no": "Hủy",
-          "content": "Bạn có muốn bật {{ bioType }} để mở khóa Rabby Wallet không?"
+          "content": "Bạn có muốn bật {{ bioType }} để mở khóa Helios Wallet không?"
         }
       },
       "password": {
@@ -1177,7 +1177,7 @@
     "addToken": {
       "tokenSupported": "Token đã được hỗ trợ trên Rabby",
       "hasAdded": "Bạn đã thêm token này.",
-      "title": "Thêm token tùy chỉnh vào Rabby",
+      "title": "Thêm token tùy chỉnh vào Helios",
       "tokenNotFound": "Không tìm thấy token từ địa chỉ hợp đồng này",
       "noTokenFound": "Không tìm thấy token",
       "tokenCustomized": "Token này đã được thêm vào danh sách tùy chỉnh"
@@ -1266,7 +1266,7 @@
       "createNewSeedPhrase": "Tạo cụm từ khôi phục mới",
       "privateKey": {
         "isItSafeToImportItInRabby": {
-          "question": "Nhập khóa riêng vào Rabby có an toàn không?",
+          "question": "Nhập khóa riêng vào Helios có an toàn không?",
           "answer": "Có, nó sẽ được lưu trữ cục bộ trên điện thoại của bạn và chỉ bạn mới có thể truy cập."
         },
         "whatIsAPrivateKey": {
@@ -1330,7 +1330,7 @@
         "description2": "Nếu bạn mất cụm từ khôi phục, bạn sẽ không thể khôi phục lại ví của mình.",
         "title3": "An toàn",
         "description3": "Tuyệt đối không chia sẻ cụm từ khôi phục—bất kỳ ai có cụm từ này đều có thể kiểm soát tài sản của bạn.",
-        "description4": "Cụm từ khôi phục được lưu trữ cục bộ trên thiết bị và mã hóa bằng mật khẩu của bạn. Chỉ bạn mới có thể truy cập. Rabby không thể truy xuất hoặc truy cập cụm từ khôi phục của bạn.",
+        "description4": "Cụm từ khôi phục được lưu trữ cục bộ trên thiết bị và mã hóa bằng mật khẩu của bạn. Chỉ bạn mới có thể truy cập. Helios không thể truy xuất hoặc truy cập cụm từ khôi phục của bạn.",
         "description1": "Cụm từ khôi phục là một chuỗi từ dùng để truy cập và kiểm soát ví. Bạn có thể dùng cụm từ này để khôi phục ví trên bất kỳ thiết bị nào."
       },
       "hd": {
@@ -1410,8 +1410,8 @@
         "backupRestoreLoadingText": "Đang tìm cụm từ khôi phục đã sao lưu...",
         "backupFailedTitle": "Sao lưu thất bại",
         "importQuestion1": "Nếu tôi làm mất cụm từ khôi phục hoặc chia sẻ nó với người khác, tài sản của tôi sẽ bị mất vĩnh viễn.",
-        "importQuestion3": "Nếu tôi không sao lưu cụm từ khôi phục và ứng dụng vô tình bị xóa, thiết bị bị mất hoặc cần cài đặt lại, Rabby không thể khôi phục cụm từ đó cho tôi.",
-        "importQuestion2": "Cụm từ khôi phục chỉ được lưu trữ trên điện thoại của tôi và Rabby không có quyền truy cập vào nó.",
+        "importQuestion3": "Nếu tôi không sao lưu cụm từ khôi phục và ứng dụng vô tình bị xóa, thiết bị bị mất hoặc cần cài đặt lại, Helios không thể khôi phục cụm từ đó cho tôi.",
+        "importQuestion2": "Cụm từ khôi phục chỉ được lưu trữ trên điện thoại của tôi và Helios không có quyền truy cập vào nó.",
         "maxAccountCount": "Tối đa 50 địa chỉ mỗi lần",
         "backupRestoreUnlockDesc": "Sử dụng cùng một mật khẩu mà bạn đã đặt để mã hóa các bản sao lưu của mình.",
         "backupUnlockPlaceholder": "Nhập mật khẩu để xác nhận",
@@ -1419,7 +1419,7 @@
         "backupUnlockButton": "Tiếp tục",
         "riskTips": "Trước khi bắt đầu, vui lòng đọc và ghi nhớ các mẹo bảo mật sau.",
         "isItSafeToImportItInRabby": {
-          "question": "Nhập cụm từ khôi phục vào Rabby có an toàn không?",
+          "question": "Nhập cụm từ khôi phục vào Helios có an toàn không?",
           "answer": "Vâng, nó sẽ được lưu trữ cục bộ trên điện thoại của bạn và chỉ bạn mới có quyền truy cập."
         },
         "backupRestoreTitle": "Đã tìm thấy {{count}} cụm từ khôi phục",
@@ -1430,7 +1430,7 @@
         "backupUnlockTitle": "Mã hóa bằng mật khẩu ứng dụng",
         "passwordMinTip": "Phải có ít nhất 8 ký tự",
         "backupUploadToGDrive": "Đang sao lưu lên Google Drive...",
-        "backupUnlockDesc": "Hãy giữ an toàn mật khẩu dùng để khôi phục bản sao lưu. Rabby Wallet không lưu trữ và không thể khôi phục mật khẩu này.",
+        "backupUnlockDesc": "Hãy giữ an toàn mật khẩu dùng để khôi phục bản sao lưu. Helios Wallet không lưu trữ và không thể khôi phục mật khẩu này.",
         "chooseBackupMethodDesc": "Sao lưu cho phép bạn khôi phục ví của mình nếu bạn xóa ứng dụng hoặc mất thiết bị của mình.",
         "chooseBackupMethodTitle": "Chọn một phương pháp sao lưu",
         "addMoreWalletTitle": "Thêm ví khác\ntừ cụm từ này"
@@ -1473,7 +1473,7 @@
         "ButtonGotIt": "Tôi đã hiểu",
         "description3": "Không bao giờ chia sẻ khóa riêng của bạn - bất kỳ ai có quyền truy cập vào nó đều có thể kiểm soát tài sản của bạn.",
         "description1": "Một khóa riêng là một chuỗi các chữ cái và số được sử dụng để truy cập và kiểm soát ví của bạn. Bạn có thể sử dụng nó để phục hồi ví của mình trên bất kỳ thiết bị nào.",
-        "description4": "Khoá riêng của bạn được lưu trữ cục bộ trên thiết bị của bạn và được mã hoá bằng mật khẩu của bạn. Chỉ có bạn mới có thể truy cập nó. Rabby không thể lấy lại hoặc truy cập khoá riêng của bạn."
+        "description4": "Khoá riêng của bạn được lưu trữ cục bộ trên thiết bị của bạn và được mã hoá bằng mật khẩu của bạn. Chỉ có bạn mới có thể truy cập nó. Helios không thể lấy lại hoặc truy cập khoá riêng của bạn."
       },
       "importing": "Đang nhập...",
       "Done": "Xong",
@@ -1529,7 +1529,7 @@
       "verify-face-id": "Xác minh Face ID",
       "verify-fingerprint": "Xác minh vân tay",
       "verify-and-backup": "Xác minh & sao lưu",
-      "verify-password-before-backup": "Xác minh mật khẩu Rabby trước khi sao lưu",
+      "verify-password-before-backup": "Xác minh mật khẩu Helios trước khi sao lưu",
       "verify-fingerprint-before-backup": "Xác minh dấu vân tay của bạn trước khi sao lưu.",
       "verify-face-id-before-backup": "Xác minh Face ID của bạn trước khi sao lưu"
     },
@@ -1603,8 +1603,8 @@
       "transactionSpeed": "Tốc độ giao dịch"
     },
     "addChain": {
-      "title": "Thêm mạng tùy chỉnh vào Rabby",
-      "desc": "Rabby không thể xác minh tính bảo mật của các mạng tùy chỉnh. Vui lòng chỉ thêm các mạng đáng tin cậy."
+      "title": "Thêm mạng tùy chỉnh vào Helios",
+      "desc": "Helios không thể xác minh tính bảo mật của các mạng tùy chỉnh. Vui lòng chỉ thêm các mạng đáng tin cậy."
     },
     "gasAccount": {
       "deposit": "Nạp tiền",
@@ -1719,7 +1719,7 @@
       "modifyRPCURL": "Chỉnh sửa URL RPC",
       "addCustomNetwork": "Thêm mạng tùy chỉnh",
       "clearPendingDesc2": "Điều này sẽ không thay đổi số dư trong các tài khoản của bạn hoặc yêu cầu bạn nhập lại cụm từ khôi phục. Tất cả tài sản và thông tin tài khoản của bạn sẽ được bảo mật.",
-      "clearPendingDesc1": "Điều này sẽ xóa tất cả các giao dịch đang chờ xử lý của bạn. Điều này có thể giúp bạn giải quyết vấn đề trong một số trường hợp trạng thái giao dịch trong Rabby không khớp với trạng thái trên chuỗi.",
+      "clearPendingDesc1": "Điều này sẽ xóa tất cả các giao dịch đang chờ xử lý của bạn. Điều này có thể giúp bạn giải quyết vấn đề trong một số trường hợp trạng thái giao dịch trong Helios không khớp với trạng thái trên chuỗi.",
       "currentLanguage": "Ngôn ngữ hiện tại",
       "appCache": "Xóa bộ nhớ cache của ứng dụng",
       "clearPendingToast": "Giao dịch chờ trên thiết bị đã được xóa",
@@ -1857,7 +1857,7 @@
       "alert": "Khóa riêng này là thông tin xác thực để truy cập tài sản của bạn. KHÔNG được làm mất hay tiết lộ cho người khác, nếu không bạn có thể mất tài sản vĩnh viễn. Vui lòng xem trong môi trường an toàn và giữ gìn cẩn thận."
     },
     "ethSign": {
-      "alert": "Ký bằng 'eth_sign' có thể dẫn đến mất tài sản. Để đảm bảo an toàn cho bạn, Rabby không hỗ trợ phương pháp này."
+      "alert": "Ký bằng 'eth_sign' có thể dẫn đến mất tài sản. Để đảm bảo an toàn cho bạn, Helios không hỗ trợ phương pháp này."
     },
     "importSafe": {
       "error": {
@@ -1909,7 +1909,7 @@
       "biometricsFail": "Không thể bật sinh trắc học",
       "passwordPlaceholder": "Mật khẩu phải có độ dài tối thiểu 8 ký tự",
       "settingUp": "Thiết lập mật khẩu",
-      "confirmModalDesc": "Vui lòng lưu trữ mật khẩu của bạn đúng cách. Khi đã mất, Rabby không thể thay đổi hoặc khôi phục lại được.",
+      "confirmModalDesc": "Vui lòng lưu trữ mật khẩu của bạn đúng cách. Khi đã mất, Helios không thể thay đổi hoặc khôi phục lại được.",
       "setWallet": "Thiết lập ví",
       "confirmError": "Mật khẩu không khớp",
       "setUpSuccess": "Thiết lập mật khẩu thành công",
@@ -1936,7 +1936,7 @@
       "signTx": {
         "title": "Dữ liệu giao dịch"
       },
-      "desc": "Rabby không thể xác minh tính bảo mật của mạng tùy chỉnh. Vui lòng chỉ thêm các mạng đáng tin cậy.",
+      "desc": "Helios không thể xác minh tính bảo mật của mạng tùy chỉnh. Vui lòng chỉ thêm các mạng đáng tin cậy.",
       "AddFromChainList": {
         "title": "Thêm nhanh từ Chainlist",
         "search": "Tìm kiếm tên mạng tùy chỉnh hoặc ID",
@@ -2072,8 +2072,8 @@
       "noNewAddr": "Không tìm thấy địa chỉ mới để nhập",
       "verifyTips": "Dữ liệu của bạn được mã hóa ngoại tuyến. Nhập mật khẩu Rabby Extension của bạn để giải mã và xác minh.",
       "verifyWithPassword": "Xác minh bằng mật khẩu Rabby Extension",
-      "newUserVerify": "Nó cũng sẽ là mật khẩu mặc định cho Rabby Mobile của bạn",
-      "imported": "Các địa chỉ đã có trong Rabby Mobile sẽ không được nhập lại. Ghi chú địa chỉ và danh sách trắng sẽ được đồng bộ hóa tự động.",
+      "newUserVerify": "Nó cũng sẽ là mật khẩu mặc định cho Helios Mobile của bạn",
+      "imported": "Các địa chỉ đã có trong Helios Mobile sẽ không được nhập lại. Ghi chú địa chỉ và danh sách trắng sẽ được đồng bộ hóa tự động.",
       "scanTips2": "Quét mã và bắt đầu đồng bộ hóa",
       "scanTips1": "Nhấp vào \"Mobile Sync\" trên Rabby Extension",
       "syncingTips": "Giữ máy ảnh ổn định cho đến khi quét xong",
@@ -2753,7 +2753,7 @@
         "perps": "Perps",
         "sizeTips": "Giá trị hoặc số lượng tổng thể của giao dịch của bạn, được xác định bởi ký quỹ và đòn bẩy.",
         "feeHyperliquid": "Hyperliquid",
-        "feeRabby": "Rabby Wallet",
+        "feeRabby": "Helios Wallet",
         "feeTitle": "Phí",
         "feeDesc": "Khi người dùng giao dịch, cả <1>phí giao dịch</1> và <2>phí builder</2> đều được áp dụng.",
         "amount": "Số tiền",
@@ -3398,7 +3398,7 @@
     },
     "newUserOnboarding": {
       "restoreWallet": {
-        "title": "Khôi phục ví Rabby của bạn",
+        "title": "Khôi phục ví Helios của bạn",
         "subtitle": "Chào mừng bạn trở lại! 🎉  \nChọn một phương pháp để khôi phục ví của bạn nhanh chóng.",
         "subtitleInApp": "Chọn một tùy chọn bên dưới để nhanh chóng nhập ví của bạn từ tiện ích Rabby hoặc iCloud."
       },
@@ -3539,7 +3539,7 @@
     },
     "walletConnect": {
       "screenTitle": "Kết nối ví",
-      "connectingToRabby": "Đang kết nối với Rabby",
+      "connectingToRabby": "Đang kết nối với Helios",
       "pairingFailed": "Ghép nối WalletConnect thất bại.",
       "proposalNotReceived": "Mã QR WalletConnect có thể đã hết hạn. Vui lòng làm mới và thử lại.",
       "connected": "Đã kết nối thành công. Vui lòng quay lại DApp.",
@@ -3687,7 +3687,7 @@
       "switchArea": {
         "skipText": "Bỏ qua thông báo này trong 1 ngày"
       },
-      "alertText": "DApp bên thứ ba: nếu gặp vấn đề sử dụng, vui lòng liên hệ bộ phận hỗ trợ DApp. Rabby chỉ cung cấp quyền truy cập xem.",
+      "alertText": "DApp bên thứ ba: nếu gặp vấn đề sử dụng, vui lòng liên hệ bộ phận hỗ trợ DApp. Helios chỉ cung cấp quyền truy cập xem.",
       "title": "Chụp màn hình để Báo cáo Lỗi",
       "submitFailed": "Gửi thất bại.",
       "includeAddress": "Chia sẻ địa chỉ để khắc phục sự cố"
@@ -3745,10 +3745,10 @@
       "message": "Vui lòng bật Bluetooth để sử dụng tính năng này"
     },
     "permissions_alert": {
-      "title": "\"Rabby Wallet\" muốn sử dụng Bluetooth",
+      "title": "\"Helios Wallet\" muốn sử dụng Bluetooth",
       "cancel": "Không Cho Phép",
       "open_settings": "OK",
-      "message": "Rabby Wallet sử dụng kết nối bluetooth để kết nối Ledger"
+      "message": "Helios Wallet sử dụng kết nối bluetooth để kết nối Ledger"
     },
     "update_firmware_alert": {
       "update": "Cập nhật",

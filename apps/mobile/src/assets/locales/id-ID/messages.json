@@ -34,7 +34,7 @@
       "goToHome": "Pergi ke Beranda",
       "createNewAddress": "Buat Dompet Baru",
       "alreadyHaveAddress": "Saya sudah memiliki dompet",
-      "welcomeTitle": "Selamat datang di\nRabby Wallet",
+      "welcomeTitle": "Selamat datang di\nHelios Wallet",
       "alreadyUseRabby": "Saya sudah menggunakan Rabby"
     },
     "transactions": {
@@ -936,7 +936,7 @@
       "quickAddressTitle_other": "{{count}} Alamat",
       "quickAddressTitle_one": "{{count}} Alamat",
       "add-address": "Tambah dompet",
-      "delete-checklist-1": "Saya mengerti bahwa jika saya menghapus dompet ini, kunci privat dan frasa benih yang sesuai akan dihapus, dan Rabby TIDAK akan dapat memulihkannya.",
+      "delete-checklist-1": "Saya mengerti bahwa jika saya menghapus dompet ini, kunci privat dan frasa benih yang sesuai akan dihapus, dan Helios TIDAK akan dapat memulihkannya.",
       "delete-private-key-title": "Hapus Dompet dan Kunci Privat",
       "delete-seed-phrase-title": "Hapus Dompet dan Frasa Benih",
       "delete-title": "Hapus Dompet",
@@ -984,7 +984,7 @@
         "disableWhitelist": "Nonaktifkan Daftar Putih",
         "enableWhitelist": "Aktifkan Daftar Putih",
         "disableWhitelistTip": "Anda dapat mengirim aset ke alamat mana pun setelah dinonaktifkan.",
-        "enableWhitelistTip": "Setelah diaktifkan, Anda hanya dapat mengirim aset ke alamat yang ada di daftar putih menggunakan Rabby.",
+        "enableWhitelistTip": "Setelah diaktifkan, Anda hanya dapat mengirim aset ke alamat yang ada di daftar putih menggunakan Helios.",
         "cancel": "Batalkan"
       },
       "tokenDetail": {
@@ -1039,7 +1039,7 @@
         "createAddress": "Buat Dompet",
         "selectAddMethod": "Pilih Metode Penambahan",
         "seedPhraseOrPrivateKey": "Frasa pemulihan atau kunci privat",
-        "restoreRabbyWallet": "Pulihkan Dompet Rabby",
+        "restoreRabbyWallet": "Pulihkan Dompet Helios",
         "moreOptions": "Opsi lainnya"
       },
       "multiAddressHome": {
@@ -1049,10 +1049,10 @@
       },
       "importAddress": {
         "tips": {
-          "entry": "Apakah aman untuk mengimpor ke Rabby",
+          "entry": "Apakah aman untuk mengimpor ke Helios",
           "gotIt": "Saya mengerti",
-          "title": "Apakah aman untuk mengimpor ke Rabby?",
-          "description": "Data Anda dienkripsi dengan aman dan disimpan secara lokal di perangkat Anda. Rabby tidak memiliki akses ke informasi pribadi Anda, dan informasi tersebut tidak pernah dibagikan dengan pihak ketiga."
+          "title": "Apakah aman untuk mengimpor ke Helios?",
+          "description": "Data Anda dienkripsi dengan aman dan disimpan secara lokal di perangkat Anda. Helios tidak memiliki akses ke informasi pribadi Anda, dan informasi tersebut tidak pernah dibagikan dengan pihak ketiga."
         },
         "seedPhrase": "Impor Frasa Benih",
         "hardWare": "Sambungkan Dompet Perangkat Keras",
@@ -1115,7 +1115,7 @@
         "GotIt": "Saya mengerti",
         "description2": "Jika Anda kehilangan frasa benih Anda, Anda tidak akan dapat memulihkan dompet Anda.",
         "title3": "Keamanan",
-        "description4": "Frasa benih disimpan secara lokal di perangkat Anda dan dienkripsi dengan kata sandi. Hanya Anda yang dapat mengaksesnya. Rabby tidak dapat mengambil atau mengakses frasa benih Anda.",
+        "description4": "Frasa benih disimpan secara lokal di perangkat Anda dan dienkripsi dengan kata sandi. Hanya Anda yang dapat mengaksesnya. Helios tidak dapat mengambil atau mengakses frasa benih Anda.",
         "description3": "Jangan pernah membagikan frasa benih—siapa pun yang memiliki akses dapat mengontrol dana Anda.",
         "description1": "Frasa benih adalah rangkaian kata untuk mengakses dan mengontrol dompet. Anda dapat menggunakannya untuk memulihkan dompet di perangkat apa pun."
       },
@@ -1128,7 +1128,7 @@
           "answer": "Sebuah frasa 12, 18, atau 24 kata yang digunakan untuk mengontrol aset Anda."
         },
         "isItSafeToImportItInRabby": {
-          "question": "Apakah aman untuk mengimpornya di Rabby?",
+          "question": "Apakah aman untuk mengimpornya di Helios?",
           "answer": "Ya, itu akan disimpan secara lokal di ponsel Anda dan hanya dapat diakses oleh Anda."
         },
         "googleDriveBackup": "Cadangan Google Drive",
@@ -1144,7 +1144,7 @@
         "backupTips": "Pastikan tidak ada orang lain yang melihat layar saat Anda mencadangkan frasa benih",
         "chooseBackupMethodDesc": "Cadangan memungkinkan Anda mengembalikan dompet Anda jika Anda menghapus aplikasi atau kehilangan perangkat Anda.",
         "icloudBackup": "Cadangan iCloud",
-        "importQuestion2": "Frasa benih hanya disimpan di ponsel saya, dan Rabby tidak memiliki akses ke sana.",
+        "importQuestion2": "Frasa benih hanya disimpan di ponsel saya, dan Helios tidak memiliki akses ke sana.",
         "backupUploadToICloud": "Mencadangkan ke iCloud...",
         "backupRestoreCreatedAt": "Waktu Cadangan:",
         "backupRestoreImported": "Diimpor",
@@ -1157,13 +1157,13 @@
         "backupRestoreDownloadTitle": "Mengimpor Frasa Benih...",
         "backupUploadToGDrive": "Mencadangkan ke Google Drive...",
         "backupRestoreUnlockTitle": "Masukkan Kata Sandi Cadangan",
-        "importQuestion3": "Jika saya tidak mencadangkan frasa benih lalu aplikasi terhapus, perangkat hilang, atau perlu dipasang ulang, Rabby tidak dapat memulihkannya untuk saya.",
+        "importQuestion3": "Jika saya tidak mencadangkan frasa benih lalu aplikasi terhapus, perangkat hilang, atau perlu dipasang ulang, Helios tidak dapat memulihkannya untuk saya.",
         "backupSuccessGDrive": "Cadangan ke Google Drive",
         "backupUnlockPlaceholder": "Masukkan Kata Sandi untuk Mengonfirmasi",
         "backupSuccessICloud": "Dicadangkan ke iCloud",
         "backupRestoreUnlockDesc": "Gunakan kata sandi yang sama yang Anda atur untuk mengenkripsi cadangan Anda.",
         "backupRestoreButton": "Impor Kode Pemulihan",
-        "backupUnlockDesc": "Jaga kata sandi Anda tetap aman untuk memulihkan cadangan. Rabby Wallet tidak menyimpannya dan tidak bisa memulihkannya.",
+        "backupUnlockDesc": "Jaga kata sandi Anda tetap aman untuk memulihkan cadangan. Helios Wallet tidak menyimpannya dan tidak bisa memulihkannya.",
         "passwordMinTip": "Harus memiliki setidaknya 8 karakter",
         "backupUnlockButton": "Lanjutkan",
         "addMoreWalletTitle": "Tambahkan lebih banyak dompet\ndari frasa ini"
@@ -1174,7 +1174,7 @@
           "answer": "Sekumpulan huruf dan angka yang digunakan untuk mengendalikan aset Anda."
         },
         "isItSafeToImportItInRabby": {
-          "question": "Apakah aman untuk mengimpornya di Rabby?",
+          "question": "Apakah aman untuk mengimpornya di Helios?",
           "answer": "Ya, itu akan disimpan secara lokal di ponsel Anda dan hanya dapat diakses oleh Anda."
         },
         "repeatImportTips": "Dompet ini telah diimpor"
@@ -1315,7 +1315,7 @@
         "title3": "Jangan Pernah Membagikannya",
         "description2": "Jika kehilangan kunci privat, Anda tidak akan dapat memulihkan dompet.",
         "title2": "Cadangan",
-        "description4": "Kunci pribadi Anda disimpan secara lokal di perangkat Anda dan dienkripsi dengan kata sandi Anda. Hanya Anda yang dapat mengaksesnya. Rabby tidak dapat mengambil atau mengakses kunci pribadi Anda.",
+        "description4": "Kunci pribadi Anda disimpan secara lokal di perangkat Anda dan dienkripsi dengan kata sandi Anda. Hanya Anda yang dapat mengaksesnya. Helios tidak dapat mengambil atau mengakses kunci pribadi Anda.",
         "title4": "Keamanan",
         "ButtonGotIt": "Saya sudah mengerti",
         "description3": "Jangan pernah membagikan kunci pribadi Anda—siapa pun yang memiliki akses ke sana dapat mengendalikan dana Anda.",
@@ -1341,7 +1341,7 @@
       "biometrics": {
         "enableBiometricAlert": {
           "yes": "Ya",
-          "content": "Apakah Anda ingin mengaktifkan {{ bioType }} untuk Membuka Kunci Dompet Rabby?",
+          "content": "Apakah Anda ingin mengaktifkan {{ bioType }} untuk Membuka Kunci Dompet Helios?",
           "title": "Aktifkan {{ bioType }}",
           "no": "Batalkan"
         },
@@ -1355,7 +1355,7 @@
       "hasAdded": "Anda telah ditambahkan token ini.",
       "tokenSupported": "Token telah didukung di Rabby",
       "tokenNotFound": "Token tidak ditemukan dari alamat kontrak ini",
-      "title": "Tambahkan token kustom ke Rabby",
+      "title": "Tambahkan token kustom ke Helios",
       "tokenCustomized": "Token saat ini sudah ditambahkan ke kustomisasi."
     },
     "switchChain": {
@@ -1464,7 +1464,7 @@
       "verify-fingerprint": "Verifikasi sidik jari",
       "verify-fingerprint-before-backup": "Verifikasi sidik jari Anda sebelum cadangan",
       "verify-face-id-before-backup": "Verifikasi Face ID Anda sebelum cadangan",
-      "verify-password-before-backup": "Verifikasi kata sandi Rabby Anda sebelum cadangan"
+      "verify-password-before-backup": "Verifikasi kata sandi Helios Anda sebelum cadangan"
     },
     "customRpc": {
       "EditCustomTestnetModal": {
@@ -1517,7 +1517,7 @@
       "alert": "Kunci Privat ini adalah kredensial untuk aset Anda. JANGAN kehilangan atau mengungkapkannya kepada orang lain, jika tidak Anda mungkin akan kehilangan aset Anda selamanya. Harap lihat di lingkungan yang aman dan simpan dengan hati-hati."
     },
     "ethSign": {
-      "alert": "Menandatangani dengan 'eth_sign' dapat menyebabkan kehilangan aset. Demi keselamatan Anda, Rabby tidak mendukung metode ini."
+      "alert": "Menandatangani dengan 'eth_sign' dapat menyebabkan kehilangan aset. Demi keselamatan Anda, Helios tidak mendukung metode ini."
     },
     "createPassword": {
       "subTitle": "Kata sandi ini membuka kunci dompet Anda dan mengenkripsi data di perangkat ini. Kata sandi tidak dapat dipulihkan. Jika hilang, Anda harus mengatur ulang lalu mengimpor ulang dompet.",
@@ -1534,7 +1534,7 @@
       "passwordMinTip": "Harus setidaknya 8 karakter",
       "Newpassword": "Kata sandi baru",
       "agree": "Saya telah membaca dan setuju dengan<1/> <2>Ketentuan Penggunaan</2>",
-      "confirmModalDesc": "Silakan simpan kata sandi Anda dengan baik. Setelah hilang, kata sandi tidak dapat diubah atau dipulihkan oleh Rabby.",
+      "confirmModalDesc": "Silakan simpan kata sandi Anda dengan baik. Setelah hilang, kata sandi tidak dapat diubah atau dipulihkan oleh Helios.",
       "setWallet": "Atur Dompet",
       "ConfirmPassword": "Konfirmasi kata sandi",
       "title": "Atur Kata Sandi",
@@ -1594,7 +1594,7 @@
       "currency": "Mata Uang",
       "empty": "Tidak Ada Jaringan Kustom",
       "id": "ID",
-      "desc": "Rabby tidak dapat memverifikasi keamanan jaringan kustom. Harap tambahkan jaringan yang tepercaya saja.",
+      "desc": "Helios tidak dapat memverifikasi keamanan jaringan kustom. Harap tambahkan jaringan yang tepercaya saja.",
       "add": "Tambahkan Jaringan Kustom",
       "addToken": {
         "title": "Tambahkan Token Jaringan Kustom",
@@ -1613,8 +1613,8 @@
       }
     },
     "addChain": {
-      "title": "Tambahkan Jaringan Kustom ke Rabby",
-      "desc": "Rabby tidak dapat memverifikasi keamanan jaringan kustom. Silakan tambahkan hanya jaringan yang tepercaya."
+      "title": "Tambahkan Jaringan Kustom ke Helios",
+      "desc": "Helios tidak dapat memverifikasi keamanan jaringan kustom. Silakan tambahkan hanya jaringan yang tepercaya."
     },
     "sign": {
       "transactionSpeed": "Kecepatan Transaksi"
@@ -1910,7 +1910,7 @@
       "clearPendingWarning": "Transaksi yang dihapus mungkin masih dikonfirmasi di on-chain kecuali jika diganti.",
       "clearPendingDesc2": "Ini tidak akan mengubah saldo di akun Anda atau mengharuskan Anda untuk memasukkan kembali frase benih Anda. Semua aset dan informasi akun Anda akan tetap aman.",
       "modifyRPCURL": "Ubah URL RPC",
-      "clearPendingDesc1": "Ini akan menghapus semua transaksi yang tertunda. Ini bisa membantu Anda menyelesaikan masalah bahwa dalam beberapa kasus status transaksi di Rabby tidak sesuai dengan status on-chain.",
+      "clearPendingDesc1": "Ini akan menghapus semua transaksi yang tertunda. Ini bisa membantu Anda menyelesaikan masalah bahwa dalam beberapa kasus status transaksi di Helios tidak sesuai dengan status on-chain.",
       "clearBrowserData": "Hapus Data Peramban",
       "searchCurrency": "Cari Mata Uang",
       "screenshotReportSwitch": "Ambil tangkapan layar untuk melaporkan bug",
@@ -1954,11 +1954,11 @@
       "importedSuccessfully": "Diimpor dengan Sukses!",
       "scanTips1": "Klik “Mobile Sync” di Ekstensi Rabby",
       "scanTips2": "Pindai kode dan mulai menyinkronkan",
-      "newUserVerify": "Ia juga akan berfungsi sebagai kata sandi default untuk Rabby Mobile",
+      "newUserVerify": "Ia juga akan berfungsi sebagai kata sandi default untuk Helios Mobile",
       "syncingProgress": "Pindai ({{ percent }})",
       "verifyTips": "Data Anda dienkripsi secara offline. Masukkan kata sandi Ekstensi Rabby Anda untuk mendekripsi dan memverifikasi.",
       "syncingTips": "Jaga kamera tetap hingga pemindaian selesai",
-      "imported": "Alamat yang sudah ada di Rabby Mobile tidak akan diimpor lagi. Catatan alamat dan daftar putih akan disinkronkan secara otomatis.",
+      "imported": "Alamat yang sudah ada di Helios Mobile tidak akan diimpor lagi. Catatan alamat dan daftar putih akan disinkronkan secara otomatis.",
       "importedTips": "Jika APLIKASI sudah memiliki alamat duplikat, alamat tersebut tidak akan diimpor. Catatan alamat dan daftar putih juga akan disinkronkan.",
       "noNewAddr": "Tidak ada alamat baru yang ditemukan untuk diimpor"
     },
@@ -2635,7 +2635,7 @@
         "perps": "Perps",
         "sizeTips": "Nilai total atau jumlah perdagangan Anda, ditentukan oleh margin dan leverage.",
         "gotItBtn": "Saya mengerti",
-        "feeRabby": "Rabby Wallet",
+        "feeRabby": "Helios Wallet",
         "feeTitle": "Biaya",
         "feeHyperliquid": "Hyperliquid",
         "feeDesc": "Saat pengguna melakukan perdagangan, <1>biaya trading</1> dan <2>biaya builder</2> akan berlaku.",
@@ -3281,7 +3281,7 @@
     },
     "newUserOnboarding": {
       "restoreWallet": {
-        "title": "Pulihkan dompet Rabby Anda",
+        "title": "Pulihkan dompet Helios Anda",
         "subtitle": "Selamat datang kembali! 🎉\nPilih metode untuk memulihkan dompet Anda dengan cepat.",
         "subtitleInApp": "Pilih salah satu opsi di bawah untuk mengimpor dompet Anda dengan cepat dari ekstensi Rabby atau iCloud."
       },
@@ -3422,7 +3422,7 @@
     },
     "walletConnect": {
       "screenTitle": "Hubungkan Dompet",
-      "connectingToRabby": "Menghubungkan ke Rabby",
+      "connectingToRabby": "Menghubungkan ke Helios",
       "pairingFailed": "Penyandingan WalletConnect gagal.",
       "proposalNotReceived": "Kode QR WalletConnect mungkin sudah kedaluwarsa. Muat ulang lalu coba lagi.",
       "connected": "Berhasil terhubung. Silakan kembali ke DApp.",
@@ -3570,7 +3570,7 @@
       "switchArea": {
         "skipText": "Lewati popup ini selama 1 hari"
       },
-      "alertText": "DApp pihak ketiga: untuk masalah penggunaan, silakan hubungi dukungan DApp. Rabby hanya menyediakan akses melihat.",
+      "alertText": "DApp pihak ketiga: untuk masalah penggunaan, silakan hubungi dukungan DApp. Helios hanya menyediakan akses melihat.",
       "title": "Tangkapan Layar untuk Melaporkan Bug",
       "submitFailed": "Gagal mengirim.",
       "includeAddress": "Bagikan alamat untuk pemecahan masalah"
@@ -3623,7 +3623,7 @@
     "authentication": {
       "auth_prompt_title": "Autentikasi diperlukan",
       "auth_prompt_cancel": "Batalkan",
-      "auth_prompt_desc": "Silakan autentikasi untuk menggunakan Rabby"
+      "auth_prompt_desc": "Silakan autentikasi untuk menggunakan Helios"
     }
   },
   "global": {
@@ -3661,7 +3661,7 @@
     "WalletImported": "Dompet diimpor",
     "unknownNFT": "NFT Tidak Dikenal",
     "confirm": "Konfirmasi",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "unlimited": "tidak terbatas",
     "Unknown": "Tidak Dikenal",
     "Paste": "Tempel",
@@ -3773,8 +3773,8 @@
     "permissions_alert": {
       "cancel": "Jangan Izinkan",
       "open_settings": "OK",
-      "message": "Rabby Wallet menggunakan akses bluetooth untuk menghubungkan Ledger",
-      "title": "\"Rabby Wallet\" Ingin Menggunakan Bluetooth"
+      "message": "Helios Wallet menggunakan akses bluetooth untuk menghubungkan Ledger",
+      "title": "\"Helios Wallet\" Ingin Menggunakan Bluetooth"
     },
     "update_firmware_alert": {
       "cancel": "Batalkan",

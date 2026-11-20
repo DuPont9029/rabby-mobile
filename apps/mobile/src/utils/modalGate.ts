@@ -55,6 +55,7 @@ export const MODAL_GATE_IDS = {
   perpsProOpenOrderEditConfirmation: 'perps-pro-open-order-edit-confirmation',
   perpsProPositionTpSlConfirmation: 'perps-pro-position-tpsl-confirmation',
   memeCoinExitDialog: 'memecoin-exit-dialog',
+  nftImageViewer: 'nft-image-viewer',
 } as const;
 
 export type ModalGateId = (typeof MODAL_GATE_IDS)[keyof typeof MODAL_GATE_IDS];
