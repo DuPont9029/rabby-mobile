@@ -137,3 +137,45 @@ describe('toOnchainNftRef', () => {
     expect(toOnchainNftRef(undefined)).toBeUndefined();
   });
 });
+
+describe('on-chain metadata details', () => {
+  it('reads attributes and a display copy of the raw JSON', () => {
+    const image = `data:image/svg+xml;base64,${base64(SVG.repeat(10))}`;
+    const parsed = parseInlineTokenUri(
+      `data:application/json;base64,${base64(
+        JSON.stringify({
+          name: 'Card',
+          external_url: 'https://example.com/card',
+          image,
+          attributes: [
+            { trait_type: 'Rank', value: 'Unrated' },
+            { trait_type: 'Duels', value: 0 },
+            { value: true },
+            { trait_type: 'Ignored', value: { nested: 1 } },
+            'not-an-object',
+          ],
+        }),
+      )}`,
+    );
+
+    expect(parsed?.externalUrl).toBe('https://example.com/card');
+    expect(parsed?.attributes).toEqual([
+      { trait: 'Rank', value: 'Unrated' },
+      { trait: 'Duels', value: '0' },
+      { trait: '', value: 'true' },
+    ]);
+    expect(parsed?.raw).toContain('"name": "Card"');
+    // Long values such as embedded images are shortened for display.
+    expect(parsed?.raw).not.toContain(image);
+    expect(parsed?.raw).toContain(`(${image.length} chars)`);
+  });
+
+  it('accepts `traits` as an alias of `attributes`', () => {
+    const parsed = parseInlineTokenUri(
+      `data:application/json,${JSON.stringify({
+        traits: [{ trait_type: 'Deck', value: 'Blue' }],
+      })}`,
+    );
+    expect(parsed?.attributes).toEqual([{ trait: 'Deck', value: 'Blue' }]);
+  });
+});
