@@ -279,6 +279,11 @@ export function resolveSvg(options: {
   url: string;
   variant?: SafeSvgVariant;
 }): Promise<SafeSvgResult>;
+export function isSafeSvgDataRasterizationAvailable(): boolean;
+export function resolveSvgData(options: {
+  svg: string;
+  variant?: SafeSvgVariant;
+}): Promise<SafeSvgResult>;
 export function clearSafeSvgCache(): Promise<void>;
 export function readFileBytes(filepath: string): Uint8Array;
 export function readBytes(

@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <deque>
 #include <dirent.h>
 #include <fcntl.h>
 #include <mutex>
@@ -180,6 +181,49 @@ std::string requireUrl(jsi::Runtime& runtime, const jsi::Object& options) {
   return url;
 }
 
+// SVG markup the app already holds (e.g. decoded from an on-chain token URI).
+// It goes through the same Rust profile check and renderer as downloads.
+std::string requireSvgData(jsi::Runtime& runtime, const jsi::Object& options) {
+  if (!options.hasProperty(runtime, "svg")) {
+    throw jsi::JSError(runtime, "resolveSvgData requires svg");
+  }
+  const auto value = options.getProperty(runtime, "svg");
+  if (!value.isString()) {
+    throw jsi::JSError(runtime, "resolveSvgData svg must be a string");
+  }
+  auto svg = value.asString(runtime).utf8(runtime);
+  if (svg.empty() || svg.size() > kMaxSvgBytes) {
+    throw jsi::JSError(runtime, "resolveSvgData svg is empty or too large");
+  }
+  return svg;
+}
+
+bool writePrivateFile(const std::string& path, const std::string& contents) {
+  const int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (fd == -1) {
+    return false;
+  }
+  size_t written = 0;
+  while (written < contents.size()) {
+    const ssize_t result =
+        write(fd, contents.data() + written, contents.size() - written);
+    if (result < 0 && errno == EINTR) {
+      continue;
+    }
+    if (result <= 0) {
+      close(fd);
+      unlink(path.c_str());
+      return false;
+    }
+    written += static_cast<size_t>(result);
+  }
+  if (close(fd) != 0) {
+    unlink(path.c_str());
+    return false;
+  }
+  return true;
+}
+
 std::string downloadFailureReason(SafeMediaDownloadCode code) {
   switch (code) {
     case SafeMediaDownloadCode::InvalidUrl:
@@ -311,6 +355,46 @@ class SafeMediaService final
         .asObject(runtime);
   }
 
+  jsi::Object resolveSvgData(
+      jsi::Runtime& runtime,
+      std::string svg,
+      const VariantPolicy& policy) {
+    // Content-addressed: equal markup shares one cache entry, and it can
+    // never collide with a URL key because the domain prefix differs.
+    const std::string key = sha256Hex(
+        std::string(kCacheVersion) + "\n" + policy.name + "\ndata\n" + svg);
+    const std::string targetPath = versionDirectory_ + "/" + key + ".png";
+    auto promiseConstructor = runtime.global()
+                                  .getPropertyAsFunction(runtime, "Promise");
+    auto executor = jsi::Function::createFromHostFunction(
+        runtime,
+        jsi::PropNameID::forAscii(runtime, "resolveSvgDataExecutor"),
+        2,
+        [self = shared_from_this(),
+         svg = std::move(svg),
+         policy,
+         key,
+         targetPath](jsi::Runtime& runtime,
+                     const jsi::Value&,
+                     const jsi::Value* arguments,
+                     size_t count) mutable -> jsi::Value {
+          if (count < 2 || !arguments[0].isObject() ||
+              !arguments[1].isObject()) {
+            throw jsi::JSError(
+                runtime, "resolveSvgData Promise executor is invalid");
+          }
+          auto callbacks = std::make_shared<PromiseCallbacks>(
+              arguments[0].asObject(runtime).asFunction(runtime),
+              arguments[1].asObject(runtime).asFunction(runtime));
+          self->startData(
+              std::move(svg), policy, key, targetPath, std::move(callbacks));
+          return jsi::Value::undefined();
+        });
+    return promiseConstructor
+        .callAsConstructor(runtime, std::move(executor))
+        .asObject(runtime);
+  }
+
   jsi::Object clearCache(jsi::Runtime& runtime) {
     auto promiseConstructor = runtime.global()
                                   .getPropertyAsFunction(runtime, "Promise");
@@ -423,6 +507,75 @@ class SafeMediaService final
           });
     } catch (...) {
       finish(key, {false, "download_failed", "", 0, 0, false});
+    }
+  }
+
+  void startData(
+      std::string svg,
+      const VariantPolicy& policy,
+      const std::string& key,
+      const std::string& targetPath,
+      std::shared_ptr<PromiseCallbacks> callbacks) {
+    uint32_t cachedWidth = 0;
+    uint32_t cachedHeight = 0;
+    if (readPngDimensions(targetPath, &cachedWidth, &cachedHeight)) {
+      resolveCallbacks(
+          invoker_,
+          {std::move(callbacks)},
+          {true, "", targetPath, cachedWidth, cachedHeight, true});
+      return;
+    }
+
+    bool startWorker = false;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto pending = jobsByKey_.find(key);
+      if (pending != jobsByKey_.end()) {
+        pending->second.callbacks.push_back(std::move(callbacks));
+        return;
+      }
+
+      const uint64_t requestId =
+          nextRequestId_.fetch_add(1, std::memory_order_relaxed);
+      const std::string inputPath = versionDirectory_ + "/." + key + "." +
+          std::to_string(requestId) + ".svg.part";
+      const std::string outputPath = versionDirectory_ + "/." + key + "." +
+          std::to_string(requestId) + ".png.part";
+      PendingJob job{
+          inputPath, outputPath, targetPath, policy, {std::move(callbacks)}};
+      jobsByKey_.emplace(key, std::move(job));
+      dataQueue_.push_back({key, inputPath, std::move(svg)});
+      if (!dataWorkerRunning_) {
+        dataWorkerRunning_ = true;
+        startWorker = true;
+      }
+    }
+
+    if (startWorker) {
+      // One worker drains the queue and exits, so a grid of on-chain NFTs
+      // never turns into an unbounded number of render threads.
+      std::thread([self = shared_from_this()] { self->drainDataQueue(); })
+          .detach();
+    }
+  }
+
+  void drainDataQueue() {
+    while (true) {
+      DataJob job;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (dataQueue_.empty()) {
+          dataWorkerRunning_ = false;
+          return;
+        }
+        job = std::move(dataQueue_.front());
+        dataQueue_.pop_front();
+      }
+      if (!writePrivateFile(job.inputPath, job.svg)) {
+        finish(job.key, {false, "io_error", "", 0, 0, false});
+        continue;
+      }
+      render(job.key);
     }
   }
 
@@ -580,8 +733,16 @@ class SafeMediaService final
   SafeMediaDownloadStarter downloadStarter_;
   std::string cacheDirectory_;
   std::string versionDirectory_;
+  struct DataJob {
+    std::string key;
+    std::string inputPath;
+    std::string svg;
+  };
+
   std::mutex mutex_;
   std::unordered_map<std::string, PendingJob> jobsByKey_;
+  std::deque<DataJob> dataQueue_;
+  bool dataWorkerRunning_ = false;
   std::atomic<uint64_t> nextRequestId_{1};
 };
 
@@ -620,6 +781,29 @@ void installSafeMedia(
             const auto policy = requireVariant(runtime, options);
             return jsi::Value(
                 runtime, service->resolveSvg(runtime, std::move(url), policy));
+          }));
+
+  nativeFs.setProperty(
+      runtime,
+      "resolveSvgData",
+      jsi::Function::createFromHostFunction(
+          runtime,
+          jsi::PropNameID::forAscii(runtime, "resolveSvgData"),
+          1,
+          [service](jsi::Runtime& runtime,
+                    const jsi::Value&,
+                    const jsi::Value* arguments,
+                    size_t count) -> jsi::Value {
+            if (count < 1 || !arguments[0].isObject()) {
+              throw jsi::JSError(
+                  runtime, "resolveSvgData expects an options object");
+            }
+            const auto options = arguments[0].asObject(runtime);
+            auto svg = requireSvgData(runtime, options);
+            const auto policy = requireVariant(runtime, options);
+            return jsi::Value(
+                runtime,
+                service->resolveSvgData(runtime, std::move(svg), policy));
           }));
 
   nativeFs.setProperty(

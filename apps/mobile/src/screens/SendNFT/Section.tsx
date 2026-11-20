@@ -10,6 +10,7 @@ import {
 } from './hooks/useSendNFT';
 import { NFTAmountInput } from './components/AmountInput';
 import { Media } from '@/components/Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT } from '@/assets/icons/nft';
 import { AddressViewer } from '@/components/AddressViewer';
 import { CopyAddressIcon } from '@/components/AddressViewer/CopyAddress';
@@ -61,6 +62,7 @@ export const NFTSection = React.memo(function NFTSection({
                 }
                 type={nftItem.content_type}
                 src={nftItem.content}
+                onchainNft={toOnchainNftRef(nftItem)}
                 style={styles.images}
                 mediaStyle={styles.images}
                 playable={true}

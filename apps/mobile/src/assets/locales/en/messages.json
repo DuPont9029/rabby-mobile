@@ -30,6 +30,19 @@
     }
   },
   "page": {
+    "nftImport": {
+      "toggle": "+ Import on-chain NFT",
+      "title": "Import on-chain NFT",
+      "contractPlaceholder": "Contract address (0x...)",
+      "tokenIdPlaceholder": "Token ID",
+      "submit": "Verify and import",
+      "success": "NFT imported. Ownership verified on-chain.",
+      "invalid": "Enter a valid contract address and numeric token ID.",
+      "notOwned": "This address does not own that token on the selected chain.",
+      "duplicate": "This NFT is already imported.",
+      "limit": "Too many imported NFTs for this address.",
+      "failed": "Could not reach the chain. Try again."
+    },
     "predict": {
       "dappSelect": {
         "title": "Select Predict Provider"

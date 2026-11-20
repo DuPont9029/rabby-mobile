@@ -21,6 +21,7 @@ import {
 import { useTheme2024 } from '@/hooks/theme';
 
 import { NftRow, TokenRowSectionHeader } from './components/AssetRenderItems';
+import { ImportOnchainNftPanel } from './components/ImportOnchainNftPanel';
 import { useTranslation } from 'react-i18next';
 import {
   createGlobalBottomSheetModal2024,
@@ -377,9 +378,22 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
     return <View style={{ height: SPACING_HEIGHT }} />;
   }, []);
 
+  const reloadAfterImport = useCallback(() => {
+    // Imported NFTs join the list on a remote refresh, so bypass the cache.
+    reloadNftList?.(true);
+  }, [reloadNftList]);
+
   const ListRenderFooter = useCallback(() => {
-    return <View style={{ height: FOOTER_HEIGHT }} />;
-  }, []);
+    return (
+      <View>
+        <ImportOnchainNftPanel
+          address={userAddr}
+          onImported={reloadAfterImport}
+        />
+        <View style={{ height: FOOTER_HEIGHT }} />
+      </View>
+    );
+  }, [reloadAfterImport, userAddr]);
 
   const scrollY = useCurrentTabScrollY();
   const handleScrollIndicatorChange = useCallback(

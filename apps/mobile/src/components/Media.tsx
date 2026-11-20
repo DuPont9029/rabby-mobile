@@ -29,6 +29,9 @@ import {
   getTrustedSafeSvgUrl,
   isDebankMediaUrl,
 } from '@/utils/trustedMediaUrl';
+import { mayBeInlineImage } from '@/utils/onchainNftMediaCore';
+import type { OnchainNftRef } from '@/utils/onchainNftMedia';
+import { MediaInlineFallback } from './MediaInlineFallback';
 
 export enum MEDIA_TYPE {
   IMAGE = 'image',
@@ -52,6 +55,12 @@ interface MediaProps {
   playable?: boolean;
   playIconSize?: number;
   safeSvgVariant?: SafeSvgVariant;
+  /**
+   * The NFT this media belongs to. When the indexed media cannot be shown,
+   * its artwork is read from the token contract (inline `data:` metadata
+   * only) and rendered through the native safe-SVG pipeline.
+   */
+  onchainNft?: OnchainNftRef;
 }
 
 const getValidLink = (link?: string) => {
@@ -90,6 +99,7 @@ export const Media = ({
   thumbnail,
   playIconSize,
   safeSvgVariant = 'thumbnail',
+  onchainNft,
   onPress,
   resizeMode,
 }: MediaProps &
@@ -262,6 +272,25 @@ export const Media = ({
 
   const safeSvgFailed = safeSvgState.status === 'failed';
   if (failed || safeSvgFailed || invalidImageSource) {
+    const isImage = type === MEDIA_TYPE.IMAGE || type === MEDIA_TYPE.IMAGE_URL;
+    if (
+      isImage &&
+      (onchainNft || mayBeInlineImage(src) || mayBeInlineImage(thumbnail))
+    ) {
+      return (
+        <MediaInlineFallback
+          src={src}
+          thumbnail={thumbnail}
+          onchainNft={onchainNft}
+          variant={safeSvgVariant}
+          containerStyle={containerStyles}
+          mediaStyle={mediaContainerStyles}
+          resizeMode={resizeMode}
+          failedPlaceholder={failedPlaceholder}
+          onReady={handleSuccess}
+        />
+      );
+    }
     return <View style={containerStyles}>{failedPlaceholder}</View>;
   }
 

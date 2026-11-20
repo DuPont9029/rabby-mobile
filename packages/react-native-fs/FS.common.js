@@ -506,6 +506,38 @@ var RNFS = {
     return nativeFS.resolveSvg(options);
   },
 
+  isSafeSvgDataRasterizationAvailable(): boolean {
+    return (
+      installNativeFS() &&
+      typeof global.__RabbyNativeFS?.resolveSvgData === 'function'
+    );
+  },
+
+  // Renders SVG markup the app already holds (no network) through the same
+  // native profile check and cache as resolveSvg.
+  resolveSvgData(options: {
+    svg: string,
+    variant?: 'thumbnail' | 'detail',
+  }): Promise<
+    | {
+        status: 'ready',
+        uri: string,
+        width: number,
+        height: number,
+        cacheHit: boolean,
+      }
+    | { status: 'failed', reason: string },
+  > {
+    const nativeFS = getNativeFS();
+    if (typeof nativeFS.resolveSvgData !== 'function') {
+      return Promise.resolve({
+        status: 'failed',
+        reason: 'native_unavailable',
+      });
+    }
+    return nativeFS.resolveSvgData(options);
+  },
+
   clearSafeSvgCache(): Promise<void> {
     if (!installNativeFS()) {
       return Promise.resolve();

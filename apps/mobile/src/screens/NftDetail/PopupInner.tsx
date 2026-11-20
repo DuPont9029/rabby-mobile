@@ -8,6 +8,7 @@ import { useThemeColors, useThemeStyles } from '@/hooks/theme';
 import { Button, Text } from '@/components';
 import { NFTItem } from '@rabby-wallet/rabby-api/dist/types';
 import { Media } from '@/components/Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT } from '@/assets/icons/nft';
 import { CHAINS_ENUM } from '@/constant/chains';
 import { createGetStyles } from '@/utils/styles';
@@ -147,6 +148,7 @@ export const NFTDetailPopupInner = ({
             }
             type={token.content_type}
             src={token.content}
+            onchainNft={toOnchainNftRef(token)}
             style={styles.images}
             mediaStyle={styles.images}
             playable={true}

@@ -6,6 +6,7 @@ import { StyleSheet, View, ViewStyle } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { IconDefaultNFT } from '@/assets/icons/nft';
 import { Media } from '@/components/Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { ASSETS_ITEM_HEIGHT_NEW } from '@/constant/layout';
 import { memo, useCallback, useState } from 'react';
 import { NftItemWithCollection } from '../../hooks/nft';
@@ -99,6 +100,9 @@ export const NftRow = memo(
                 type="image_url"
                 src={nftImageUrl}
                 thumbnail={nftImageUrl}
+                onchainNft={toOnchainNftRef(
+                  isCollection ? item.nft_list[0] : (item as NFTItem),
+                )}
                 mediaStyle={styles.images}
                 style={styles.images}
                 playIconSize={36}
