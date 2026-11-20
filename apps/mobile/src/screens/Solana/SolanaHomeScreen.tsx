@@ -147,16 +147,28 @@ export const SolanaHomeScreen = () => {
           {t('page.solana.address', { defaultValue: 'Solana address' })}
         </Text>
         {accountState.status === 'error' ? (
-          <Text style={styles.error}>
-            {accountState.reason === 'seed_mismatch'
-              ? t('page.solana.seedMismatch', {
-                  defaultValue:
-                    'This wallet uses a passphrase that is not loaded. Unlock it with its passphrase first.',
-                })
-              : t('page.solana.accountUnavailable', {
-                  defaultValue:
-                    'A Solana account cannot be derived for this wallet.',
-                })}
+          <Text style={styles.error} selectable>
+            {`${
+              accountState.reason === 'seed_mismatch'
+                ? t('page.solana.seedMismatch', {
+                    defaultValue:
+                      'This wallet uses a passphrase that is not loaded. Unlock it with its passphrase first.',
+                  })
+                : accountState.reason === 'locked'
+                ? t('page.solana.locked', {
+                    defaultValue:
+                      'The wallet is locked: unlock it and open Solana again.',
+                  })
+                : accountState.reason === 'not_hd_account'
+                ? t('page.solana.notHdAccount', {
+                    defaultValue:
+                      'This address was not created from a seed phrase in this app (e.g. an imported private key or a hardware wallet), so there is no Solana key to derive.',
+                  })
+                : t('page.solana.accountUnavailable', {
+                    defaultValue:
+                      'A Solana account cannot be derived for this wallet.',
+                  })
+            } (${accountState.reason})`}
           </Text>
         ) : (
           <Text style={styles.address} selectable>

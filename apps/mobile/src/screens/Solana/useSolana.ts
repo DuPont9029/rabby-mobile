@@ -39,11 +39,14 @@ export const useSolanaAccount = (evmAddress?: string) => {
       .then(account => active && setState({ status: 'ready', value: account }))
       .catch(error => {
         if (active) {
-          setState({
-            status: 'error',
-            reason:
-              error instanceof SolanaAccountError ? error.reason : 'unknown',
-          });
+          const reason =
+            error instanceof SolanaAccountError
+              ? error.reason
+              : `unknown: ${
+                  error instanceof Error ? error.message : String(error)
+                }`;
+          console.warn('[solana] account derivation failed', reason);
+          setState({ status: 'error', reason });
         }
       });
     return () => {
