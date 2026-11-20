@@ -153,6 +153,21 @@ fn bundled_font_database() -> Result<Arc<usvg::fontdb::Database>, RabbySafeSvgEr
         .ok_or(RabbySafeSvgError::UnsupportedContent)
 }
 
+fn check_raster_dimensions(width: u32, height: u32) -> Result<(u32, u32), RabbySafeSvgError> {
+    let pixels = u64::from(width)
+        .checked_mul(u64::from(height))
+        .ok_or(RabbySafeSvgError::UnsafeContent)?;
+    if width == 0
+        || height == 0
+        || width > MAX_MAX_EDGE
+        || height > MAX_MAX_EDGE
+        || pixels > MAX_EMBEDDED_PNG_PIXELS
+    {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    Ok((width, height))
+}
+
 fn embedded_png_dimensions(data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError> {
     const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
     if data.len() < 24
@@ -166,54 +181,291 @@ fn embedded_png_dimensions(data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError>
 
     let width = u32::from_be_bytes(data[16..20].try_into().unwrap_or_default());
     let height = u32::from_be_bytes(data[20..24].try_into().unwrap_or_default());
-    let pixels = u64::from(width)
-        .checked_mul(u64::from(height))
-        .ok_or(RabbySafeSvgError::UnsafeContent)?;
-    if width == 0
-        || height == 0
-        || width > MAX_MAX_EDGE
-        || height > MAX_MAX_EDGE
-        || pixels > MAX_EMBEDDED_PNG_PIXELS
+    check_raster_dimensions(width, height)
+}
+
+/// Reads the frame size from a baseline or progressive JPEG's SOF segment.
+fn embedded_jpeg_dimensions(data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError> {
+    if data.len() < 4 || data.len() > MAX_EMBEDDED_PNG_BYTES || data[..2] != [0xFF, 0xD8] {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    let mut offset = 2usize;
+    while offset + 4 <= data.len() {
+        if data[offset] != 0xFF {
+            return Err(RabbySafeSvgError::UnsafeContent);
+        }
+        let marker = data[offset + 1];
+        if marker == 0xFF {
+            offset += 1;
+            continue;
+        }
+        if marker == 0xD8 || marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
+            offset += 2;
+            continue;
+        }
+        if marker == 0xD9 || marker == 0xDA {
+            break;
+        }
+        let length = usize::from(u16::from_be_bytes([data[offset + 2], data[offset + 3]]));
+        if length < 2 || offset + 2 + length > data.len() {
+            return Err(RabbySafeSvgError::UnsafeContent);
+        }
+        let is_start_of_frame =
+            (0xC0..=0xCF).contains(&marker) && marker != 0xC4 && marker != 0xC8 && marker != 0xCC;
+        if is_start_of_frame {
+            if length < 7 {
+                return Err(RabbySafeSvgError::UnsafeContent);
+            }
+            let height = u16::from_be_bytes([data[offset + 5], data[offset + 6]]);
+            let width = u16::from_be_bytes([data[offset + 7], data[offset + 8]]);
+            return check_raster_dimensions(u32::from(width), u32::from(height));
+        }
+        offset += 2 + length;
+    }
+    Err(RabbySafeSvgError::UnsafeContent)
+}
+
+fn embedded_gif_dimensions(data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError> {
+    if data.len() < 10
+        || data.len() > MAX_EMBEDDED_PNG_BYTES
+        || !(data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a"))
     {
         return Err(RabbySafeSvgError::UnsafeContent);
     }
-
-    Ok((width, height))
+    let width = u16::from_le_bytes([data[6], data[7]]);
+    let height = u16::from_le_bytes([data[8], data[9]]);
+    check_raster_dimensions(u32::from(width), u32::from(height))
 }
 
-fn validate_embedded_png_href(value: &str) -> Result<u64, RabbySafeSvgError> {
-    const PREFIX: &str = "data:image/png;base64,";
-    let encoded = value
-        .strip_prefix(PREFIX)
-        .filter(|encoded| !encoded.is_empty())
+fn embedded_webp_dimensions(data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError> {
+    if data.len() < 30
+        || data.len() > MAX_EMBEDDED_PNG_BYTES
+        || &data[..4] != b"RIFF"
+        || &data[8..12] != b"WEBP"
+    {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    let le24 = |at: usize| {
+        u32::from(data[at]) | (u32::from(data[at + 1]) << 8) | (u32::from(data[at + 2]) << 16)
+    };
+    let (width, height) = match &data[12..16] {
+        b"VP8 " => {
+            if data[23..26] != [0x9D, 0x01, 0x2A] {
+                return Err(RabbySafeSvgError::UnsafeContent);
+            }
+            (
+                u32::from(u16::from_le_bytes([data[26], data[27]]) & 0x3FFF),
+                u32::from(u16::from_le_bytes([data[28], data[29]]) & 0x3FFF),
+            )
+        }
+        b"VP8L" => {
+            if data[20] != 0x2F {
+                return Err(RabbySafeSvgError::UnsafeContent);
+            }
+            let bits = u32::from_le_bytes([data[21], data[22], data[23], data[24]]);
+            ((bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1)
+        }
+        b"VP8X" => (le24(24) + 1, le24(27) + 1),
+        _ => return Err(RabbySafeSvgError::UnsafeContent),
+    };
+    check_raster_dimensions(width, height)
+}
+
+/// Raster formats an SVG may embed as a `data:` URL, keyed by media type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum EmbeddedRaster {
+    Png,
+    Jpeg,
+    Gif,
+    Webp,
+}
+
+impl EmbeddedRaster {
+    fn from_mime(mime: &str) -> Option<Self> {
+        match mime.to_ascii_lowercase().as_str() {
+            "image/png" => Some(Self::Png),
+            "image/jpeg" | "image/jpg" => Some(Self::Jpeg),
+            "image/gif" => Some(Self::Gif),
+            "image/webp" => Some(Self::Webp),
+            _ => None,
+        }
+    }
+
+    fn dimensions(self, data: &[u8]) -> Result<(u32, u32), RabbySafeSvgError> {
+        match self {
+            Self::Png => embedded_png_dimensions(data),
+            Self::Jpeg => embedded_jpeg_dimensions(data),
+            Self::Gif => embedded_gif_dimensions(data),
+            Self::Webp => embedded_webp_dimensions(data),
+        }
+    }
+
+    fn image_kind(self, data: Arc<Vec<u8>>) -> usvg::ImageKind {
+        match self {
+            Self::Png => usvg::ImageKind::PNG(data),
+            Self::Jpeg => usvg::ImageKind::JPEG(data),
+            Self::Gif => usvg::ImageKind::GIF(data),
+            Self::Webp => usvg::ImageKind::WEBP(data),
+        }
+    }
+}
+
+const SVG_MIME: &str = "image/svg+xml";
+/// Nested SVG documents may be one level deep and may not embed images.
+const MAX_NESTED_SVG_DEPTH: u8 = 1;
+const MAX_NESTED_SVG_BYTES: usize = 1024 * 1024;
+const MAX_NESTED_SVG_DOCUMENTS: usize = 32;
+
+fn percent_decode(value: &str) -> Option<Vec<u8>> {
+    let bytes = value.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0usize;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            let hex = value.get(index + 1..index + 3)?;
+            output.push(u8::from_str_radix(hex, 16).ok()?);
+            index += 3;
+        } else {
+            output.push(bytes[index]);
+            index += 1;
+        }
+    }
+    Some(output)
+}
+
+/// Splits and decodes a `data:` URL into its media type and payload. Returns
+/// `None` for anything that is not a well-formed `data:` URL.
+fn decode_data_url(value: &str, max_bytes: usize) -> Option<(String, Vec<u8>)> {
+    let rest = value.trim();
+    let rest = rest
+        .get(..5)
+        .filter(|scheme| scheme.eq_ignore_ascii_case("data:"))
+        .map(|_| &rest[5..])?;
+    let (header, payload) = rest.split_once(',')?;
+    let mut parameters = header.split(';').map(str::trim);
+    let mime = parameters.next().unwrap_or_default().to_ascii_lowercase();
+    let is_base64 = parameters.any(|parameter| parameter.eq_ignore_ascii_case("base64"));
+    // Cheap bound before decoding: base64 is ~4/3 and percent-encoding at
+    // most 3x the decoded size.
+    let encoded_limit = if is_base64 {
+        max_bytes.saturating_mul(4) / 3 + 64
+    } else {
+        max_bytes.saturating_mul(3)
+    };
+    if payload.len() > encoded_limit {
+        return None;
+    }
+    let decoded = if is_base64 {
+        let compact: String = payload
+            .chars()
+            .filter(|character| !character.is_ascii_whitespace())
+            .collect();
+        let compact = percent_decode(&compact)
+            .and_then(|bytes| String::from_utf8(bytes).ok())
+            .unwrap_or(compact);
+        base64::engine::general_purpose::STANDARD
+            .decode(compact.trim_end_matches('='))
+            .or_else(|_| {
+                base64::engine::general_purpose::STANDARD_NO_PAD
+                    .decode(compact.trim_end_matches('='))
+            })
+            .ok()?
+    } else {
+        percent_decode(payload)?
+    };
+    (decoded.len() <= max_bytes).then_some((mime, decoded))
+}
+
+/// Shared limits for everything embedded in one rendered SVG.
+#[derive(Default)]
+struct EmbeddedBudget {
+    raster_pixels: u64,
+    nested_documents: usize,
+    nested_bytes: usize,
+}
+
+/// Checks an `image`/`feImage` `href` that is not a local `#id` reference.
+/// Raster images are size-checked; SVG images are sanitized and checked with
+/// the full profile one level down, where they may not embed images at all.
+fn validate_embedded_image_href(
+    value: &str,
+    depth: u8,
+    budget: &mut EmbeddedBudget,
+) -> Result<(), RabbySafeSvgError> {
+    if depth >= MAX_NESTED_SVG_DEPTH {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    let (mime, data) = decode_data_url(value, MAX_EMBEDDED_PNG_BYTES.max(MAX_NESTED_SVG_BYTES))
         .ok_or(RabbySafeSvgError::UnsafeContent)?;
-    let decoded = base64::engine::general_purpose::STANDARD
-        .decode(encoded)
-        .map_err(|_| RabbySafeSvgError::UnsafeContent)?;
-    let (width, height) = embedded_png_dimensions(&decoded)?;
-    Ok(u64::from(width) * u64::from(height))
+    if let Some(raster) = EmbeddedRaster::from_mime(&mime) {
+        let (width, height) = raster.dimensions(&data)?;
+        budget.raster_pixels = budget
+            .raster_pixels
+            .checked_add(u64::from(width) * u64::from(height))
+            .filter(|total| *total <= MAX_TOTAL_EMBEDDED_PNG_PIXELS)
+            .ok_or(RabbySafeSvgError::UnsafeContent)?;
+        return Ok(());
+    }
+    if mime != SVG_MIME || data.len() > MAX_NESTED_SVG_BYTES {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    budget.nested_documents += 1;
+    budget.nested_bytes = budget.nested_bytes.saturating_add(data.len());
+    if budget.nested_documents > MAX_NESTED_SVG_DOCUMENTS || budget.nested_bytes > MAX_INPUT_BYTES {
+        return Err(RabbySafeSvgError::UnsafeContent);
+    }
+    let sanitized = sanitize_svg(&data);
+    validate_svg_profile_at(&sanitized, depth + 1, budget).map(|_| ())
 }
 
-/// Removes every `@font-face { ... }` rule from a stylesheet.
+/// At-rules whose whole `{ ... }` block is deleted from stylesheets. Rabby
+/// never loads SVG-supplied fonts, and output is a static image, so these
+/// rules cannot take effect anyway.
+const STRIPPED_AT_RULES: [&str; 4] = [
+    "@font-face",
+    "@keyframes",
+    "@-webkit-keyframes",
+    "@-moz-keyframes",
+];
+
+/// SMIL animation elements. They are deleted, so the static first frame is
+/// rendered instead of rejecting the whole image.
+const STRIPPED_ANIMATION_ELEMENTS: [&str; 4] =
+    ["animate", "animateMotion", "animateTransform", "set"];
+
+/// Removes every [`STRIPPED_AT_RULES`] rule from a stylesheet.
 ///
 /// Returns `None` when the stylesheet has no such rule, or when a rule is not
-/// a plain `@font-face` followed by one brace-balanced block, so the caller
-/// keeps the original bytes and the profile check rejects them as before.
-fn strip_font_face_rules(css: &str) -> Option<String> {
-    const AT_RULE: &str = "@font-face";
+/// followed by an optional plain name and one brace-balanced block, so the
+/// caller keeps the original bytes and the profile check rejects them.
+fn strip_at_rules(css: &str) -> Option<String> {
+    let find_next = |text: &str| {
+        STRIPPED_AT_RULES
+            .iter()
+            .filter_map(|rule| {
+                text.as_bytes()
+                    .windows(rule.len())
+                    .position(|window| window.eq_ignore_ascii_case(rule.as_bytes()))
+                    .map(|position| (position, rule.len()))
+            })
+            .min()
+    };
     let mut output = String::with_capacity(css.len());
     let mut rest = css;
     let mut stripped = false;
-    while let Some(start) = rest
-        .as_bytes()
-        .windows(AT_RULE.len())
-        .position(|window| window.eq_ignore_ascii_case(AT_RULE.as_bytes()))
-    {
-        let after = &rest[start + AT_RULE.len()..];
-        let block = after.trim_start();
-        if !block.starts_with('{') {
+    while let Some((start, rule_length)) = find_next(rest) {
+        let after = &rest[start + rule_length..];
+        // Only an identifier or quoted name may sit between the at-rule and
+        // its block (e.g. `@keyframes spin {`).
+        let open = after.find('{')?;
+        if !after[..open].chars().all(|character| {
+            character.is_ascii_alphanumeric()
+                || character.is_ascii_whitespace()
+                || matches!(character, '-' | '_' | '"' | '\'')
+        }) {
             return None;
         }
+        let block = &after[open..];
         let mut depth = 0usize;
         let mut end = None;
         for (index, character) in block.char_indices() {
@@ -240,15 +492,15 @@ fn strip_font_face_rules(css: &str) -> Option<String> {
     Some(output)
 }
 
-/// Drops `@font-face` rules from `<style>` elements so on-chain NFT artwork
-/// that embeds its own font (commonly as a `data:font/...` URL) renders with
-/// the bundled font instead of being rejected outright. Rabby never loads
-/// SVG-supplied fonts, so the rule could not take effect anyway.
+/// Makes common on-chain NFT artwork fit the static profile by deleting the
+/// parts that cannot take effect in a static, font-free rendering:
+/// [`STRIPPED_AT_RULES`] in `<style>` elements and
+/// [`STRIPPED_ANIMATION_ELEMENTS`].
 ///
 /// This step only deletes bytes. The full static profile check still runs on
 /// its output, so anything else in the SVG is judged exactly as before. Any
 /// input this step cannot handle safely is returned unchanged.
-fn strip_svg_font_faces(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+fn sanitize_svg(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
     use std::borrow::Cow;
 
     if svg.len() > MAX_INPUT_BYTES {
@@ -266,6 +518,11 @@ fn strip_svg_font_faces(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
     };
 
     let mut edits: Vec<(std::ops::Range<usize>, String)> = Vec::new();
+    for animation in document.descendants().filter(|node| {
+        node.is_element() && STRIPPED_ANIMATION_ELEMENTS.contains(&node.tag_name().name())
+    }) {
+        edits.push((animation.range(), String::new()));
+    }
     for style in document
         .descendants()
         .filter(|node| node.is_element() && node.tag_name().name() == "style")
@@ -290,7 +547,7 @@ fn strip_svg_font_faces(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
             } else {
                 continue;
             };
-            if let Some(stripped) = strip_font_face_rules(content) {
+            if let Some(stripped) = strip_at_rules(content) {
                 edits.push((content_start..content_start + content.len(), stripped));
             }
         }
@@ -303,6 +560,11 @@ fn strip_svg_font_faces(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
     let mut cursor = 0usize;
     edits.sort_by_key(|(range, _)| range.start);
     for (range, replacement) in edits {
+        // An edit inside an element that is already deleted (e.g. a
+        // `<style>` nested in `<set>`) is covered by that deletion.
+        if range.start < cursor {
+            continue;
+        }
         output.push_str(&text[cursor..range.start]);
         output.push_str(&replacement);
         cursor = range.end;
@@ -312,6 +574,14 @@ fn strip_svg_font_faces(svg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
 }
 
 fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
+    validate_svg_profile_at(svg, 0, &mut EmbeddedBudget::default())
+}
+
+fn validate_svg_profile_at<'a>(
+    svg: &'a [u8],
+    depth: u8,
+    budget: &mut EmbeddedBudget,
+) -> Result<&'a str, RabbySafeSvgError> {
     if svg.len() > MAX_INPUT_BYTES {
         return Err(RabbySafeSvgError::InputTooLarge);
     }
@@ -350,14 +620,10 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
         "video",
         "iframe",
     ];
-    let unsupported_elements = ["textPath"];
     let mut node_count = 0usize;
     let mut attribute_count = 0usize;
     let mut stylesheet_bytes = 0usize;
     let mut text_characters = 0usize;
-    let mut total_embedded_png_pixels = 0u64;
-    let bundled_font = ttf_parser::Face::parse(BUNDLED_FONT_BYTES, 0)
-        .map_err(|_| RabbySafeSvgError::UnsupportedContent)?;
 
     for node in document.descendants() {
         node_count = node_count.saturating_add(1);
@@ -375,13 +641,11 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
                 ancestor.is_element() && matches!(ancestor.tag_name().name(), "text" | "tspan")
             })
         {
+            // Characters the bundled font has no glyph for are left out of
+            // the rendering; only the amount of text work is bounded.
             let value = node.text().unwrap_or_default();
             text_characters = text_characters.saturating_add(value.chars().count());
-            if text_characters > MAX_TEXT_CHARACTERS
-                || value.chars().any(|character| {
-                    !character.is_whitespace() && bundled_font.glyph_index(character).is_none()
-                })
-            {
+            if text_characters > MAX_TEXT_CHARACTERS {
                 return Err(RabbySafeSvgError::UnsupportedContent);
             }
         }
@@ -393,9 +657,7 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
         if forbidden_elements.contains(&element_name) {
             return Err(RabbySafeSvgError::UnsafeContent);
         }
-        if unsupported_elements.contains(&element_name) {
-            return Err(RabbySafeSvgError::UnsupportedContent);
-        }
+        let is_image_element = matches!(element_name, "image" | "feImage");
 
         if element_name == "style" {
             if node.children().any(|child| child.is_element()) {
@@ -424,16 +686,21 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
         }
 
         for attribute in node.attributes() {
+            let name = attribute.name();
+            let value = attribute.value().trim();
+            // `image`/`feImage` may embed a data: image; anything else in an
+            // `href` must be a local `#id` reference.
+            let is_embedded_image = is_image_element && name == "href" && !value.starts_with('#');
+
             attribute_count = attribute_count.saturating_add(1);
+            // Embedded images are bounded by their own decoded-size limits
+            // (and the total input size) instead of the attribute limit.
             if attribute_count > MAX_ATTRIBUTES
-                || attribute.value().len() > MAX_ATTRIBUTE_VALUE_BYTES
+                || (!is_embedded_image && attribute.value().len() > MAX_ATTRIBUTE_VALUE_BYTES)
             {
                 return Err(RabbySafeSvgError::UnsafeContent);
             }
 
-            let name = attribute.name();
-            let value = attribute.value().trim();
-            let is_embedded_png = element_name == "image" && name == "href";
             if name
                 .as_bytes()
                 .get(..2)
@@ -441,22 +708,17 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
             {
                 return Err(RabbySafeSvgError::UnsafeContent);
             }
-            if is_embedded_png {
-                total_embedded_png_pixels = total_embedded_png_pixels
-                    .checked_add(validate_embedded_png_href(value)?)
-                    .ok_or(RabbySafeSvgError::UnsafeContent)?;
-                if total_embedded_png_pixels > MAX_TOTAL_EMBEDDED_PNG_PIXELS {
-                    return Err(RabbySafeSvgError::UnsafeContent);
-                }
+            if is_embedded_image {
+                validate_embedded_image_href(value, depth, budget)?;
             } else if name == "href" && !value.starts_with('#') {
                 return Err(RabbySafeSvgError::UnsafeContent);
             }
             if name == "style" {
                 validate_css_fragment(value)?;
-            } else if contains_non_local_url_reference(value) {
+            } else if !is_embedded_image && contains_non_local_url_reference(value) {
                 return Err(RabbySafeSvgError::UnsafeContent);
             }
-            if !is_embedded_png
+            if !is_embedded_image
                 && (contains_ascii_case_insensitive(value, "javascript:")
                     || contains_ascii_case_insensitive(value, "file:")
                     || contains_ascii_case_insensitive(value, "data:")
@@ -465,7 +727,7 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
             {
                 return Err(RabbySafeSvgError::UnsafeContent);
             }
-            if contains_ascii_case_insensitive(value, "url(") {
+            if !is_embedded_image && contains_ascii_case_insensitive(value, "url(") {
                 let has_unsafe_reference = if name == "style" {
                     contains_non_local_url_reference(value)
                 } else {
@@ -481,12 +743,78 @@ fn validate_svg_profile(svg: &[u8]) -> Result<&str, RabbySafeSvgError> {
     Ok(text)
 }
 
+/// Builds the `usvg` options for one document level. Embedded data is
+/// re-checked here on the exact bytes `usvg` decoded, against limits shared
+/// by every image in the rendering: rasters must pass the dimension checks,
+/// and nested SVGs must pass sanitizing and the full profile check one level
+/// down, where image resolving is disabled entirely.
+fn safe_usvg_options(
+    fontdb: Arc<usvg::fontdb::Database>,
+    font_id: usvg::fontdb::ID,
+    depth: u8,
+    budget: Arc<std::sync::Mutex<EmbeddedBudget>>,
+) -> usvg::Options<'static> {
+    let nested_fontdb = Arc::clone(&fontdb);
+    let resolve_data: usvg::ImageHrefDataResolverFn<'static> = Box::new(move |mime, data, _| {
+        if depth >= MAX_NESTED_SVG_DEPTH {
+            return None;
+        }
+        let mut shared = budget.lock().ok()?;
+        if let Some(raster) = EmbeddedRaster::from_mime(mime) {
+            let (width, height) = raster.dimensions(&data).ok()?;
+            shared.raster_pixels = shared
+                .raster_pixels
+                .checked_add(u64::from(width) * u64::from(height))
+                .filter(|total| *total <= MAX_TOTAL_EMBEDDED_PNG_PIXELS)?;
+            return Some(raster.image_kind(data));
+        }
+        if !mime.eq_ignore_ascii_case(SVG_MIME) || data.len() > MAX_NESTED_SVG_BYTES {
+            return None;
+        }
+        shared.nested_documents += 1;
+        shared.nested_bytes = shared.nested_bytes.saturating_add(data.len());
+        if shared.nested_documents > MAX_NESTED_SVG_DOCUMENTS
+            || shared.nested_bytes > MAX_INPUT_BYTES
+        {
+            return None;
+        }
+        let sanitized = sanitize_svg(&data).into_owned();
+        validate_svg_profile_at(&sanitized, depth + 1, &mut shared).ok()?;
+        drop(shared);
+        let nested_options = safe_usvg_options(
+            Arc::clone(&nested_fontdb),
+            font_id,
+            depth + 1,
+            Arc::clone(&budget),
+        );
+        usvg::Tree::from_data(&sanitized, &nested_options)
+            .ok()
+            .map(usvg::ImageKind::SVG)
+    });
+    usvg::Options {
+        resources_dir: None,
+        font_family: BUNDLED_FONT_FAMILY.to_owned(),
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data,
+            resolve_string: Box::new(|_, _| None),
+        },
+        font_resolver: usvg::FontResolver {
+            // Ignore untrusted font-family names. Every accepted glyph is
+            // converted to paths with this one app-bundled font.
+            select_font: Box::new(move |_, _| Some(font_id)),
+            select_fallback: Box::new(|_, _, _| None),
+        },
+        fontdb,
+        ..usvg::Options::default()
+    }
+}
+
 fn render_svg_to_png(
     svg: &[u8],
     max_edge: u32,
     max_pixels: u32,
 ) -> Result<RenderedPng, RabbySafeSvgError> {
-    let svg = strip_svg_font_faces(svg);
+    let svg = sanitize_svg(svg);
     let svg = svg.as_ref();
     validate_svg_profile(svg)?;
     if !(MIN_MAX_EDGE..=MAX_MAX_EDGE).contains(&max_edge)
@@ -502,28 +830,8 @@ fn render_svg_to_png(
         .next()
         .map(|face| face.id)
         .ok_or(RabbySafeSvgError::UnsupportedContent)?;
-    let options = usvg::Options {
-        resources_dir: None,
-        font_family: BUNDLED_FONT_FAMILY.to_owned(),
-        image_href_resolver: usvg::ImageHrefResolver {
-            resolve_data: Box::new(|mime, data, _| {
-                if mime == "image/png" && embedded_png_dimensions(&data).is_ok() {
-                    Some(usvg::ImageKind::PNG(Arc::clone(&data)))
-                } else {
-                    None
-                }
-            }),
-            resolve_string: Box::new(|_, _| None),
-        },
-        font_resolver: usvg::FontResolver {
-            // Ignore untrusted font-family names. Every accepted glyph is
-            // converted to paths with this one app-bundled font.
-            select_font: Box::new(move |_, _| Some(font_id)),
-            select_fallback: Box::new(|_, _, _| None),
-        },
-        fontdb,
-        ..usvg::Options::default()
-    };
+    let budget = Arc::new(std::sync::Mutex::new(EmbeddedBudget::default()));
+    let options = safe_usvg_options(fontdb, font_id, 0, budget);
     let tree = usvg::Tree::from_data(svg, &options).map_err(|error| match error {
         usvg::Error::ElementsLimitReached => RabbySafeSvgError::UnsafeContent,
         usvg::Error::InvalidSize => RabbySafeSvgError::InvalidSize,
@@ -729,7 +1037,9 @@ mod tests {
 
         for svg in [
             br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="https://example.com/a.png"/></svg>"#.as_slice(),
-            br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,PHN2Zy8+"/></svg>"#.as_slice(),
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxpbWFnZSBocmVmPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ289Ii8+PC9zdmc+"/></svg>"#.as_slice(),
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/bmp;base64,Qk0="/></svg>"#.as_slice(),
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:text/html,%3Cscript%3E"/></svg>"#.as_slice(),
             br#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,not-base64"/></svg>"#.as_slice(),
         ] {
             assert_eq!(
@@ -760,12 +1070,9 @@ mod tests {
     }
 
     #[test]
-    fn rejects_text_that_cannot_be_rendered_without_external_fonts() {
-        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><text x="1" y="10">🙂</text></svg>"#;
-        assert_eq!(
-            render_svg_to_png(svg.as_bytes(), 64, 100_000).unwrap_err(),
-            RabbySafeSvgError::UnsupportedContent
-        );
+    fn renders_text_with_glyphs_the_bundled_font_lacks_by_leaving_them_out() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect width="20" height="20" fill="#123"/><text x="1" y="10">🙂 NFT</text></svg>"##;
+        assert!(render_svg_to_png(svg.as_bytes(), 64, 100_000).is_ok());
     }
 
     #[test]
@@ -798,11 +1105,16 @@ mod tests {
     }
 
     #[test]
-    fn rejects_text_paths_and_excessive_text_work() {
+    fn renders_local_text_paths_but_rejects_excessive_text_work() {
         let text_path = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path id="p" d="M0 10h20"/><text><textPath href="#p">NFT</textPath></text></svg>"##;
+        let rendered = render_svg_to_png(text_path, 64, 100_000).unwrap();
+        let pixmap = tiny_skia::Pixmap::decode_png(&rendered.bytes).unwrap();
+        assert!(pixmap.pixels().iter().any(|pixel| pixel.alpha() > 0));
+
+        let external_text_path = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><text><textPath href="https://example.com/p.svg#p">NFT</textPath></text></svg>"#;
         assert_eq!(
-            render_svg_to_png(text_path, 64, 100_000).unwrap_err(),
-            RabbySafeSvgError::UnsupportedContent
+            render_svg_to_png(external_text_path, 64, 100_000).unwrap_err(),
+            RabbySafeSvgError::UnsafeContent
         );
 
         let oversized_text = format!(
@@ -813,6 +1125,114 @@ mod tests {
             render_svg_to_png(oversized_text.as_bytes(), 64, 100_000).unwrap_err(),
             RabbySafeSvgError::UnsupportedContent
         );
+    }
+
+    #[test]
+    fn renders_the_first_frame_of_smil_and_css_animations() {
+        let svg = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><style>@keyframes spin { from { opacity: 0; } to { opacity: 1; } } @-webkit-keyframes "x" { 0% { fill: red; } } rect { fill: #0a0; }</style><rect width="10" height="10"><animate attributeName="width" values="1;10" dur="2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1s"/><set attributeName="fill" to="blue"/></rect><g><animateMotion dur="1s"><mpath href="#r"/></animateMotion></g></svg>"##;
+        let rendered = render_svg_to_png(svg, 64, 100_000).unwrap();
+        let pixmap = tiny_skia::Pixmap::decode_png(&rendered.bytes).unwrap();
+        assert!(pixmap.pixels().iter().any(|pixel| pixel.alpha() > 0));
+    }
+
+    #[test]
+    fn still_rejects_animations_that_point_outside_the_document() {
+        // The animation itself is deleted, but anything else unsafe in the
+        // document is still judged by the profile check.
+        for svg in [
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><a href="https://example.com"><set attributeName="href" to="javascript:alert(1)"/></a></svg>"#.as_slice(),
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><style>@keyframes a { to { fill: red; } } @import "x.css";</style></svg>"#.as_slice(),
+            br#"<svg xmlns="http://www.w3.org/2000/svg"><style>@keyframes ;x { }</style></svg>"#.as_slice(),
+        ] {
+            assert_eq!(
+                render_svg_to_png(svg, 64, 100_000).unwrap_err(),
+                RabbySafeSvgError::UnsafeContent
+            );
+        }
+    }
+
+    #[test]
+    fn renders_nested_svg_images_one_level_deep() {
+        for href in [
+            "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjAwIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJmaWxsIiB2YWx1ZXM9IiNmMDA7IzAwZiIgZHVyPSIxcyIvPjwvcmVjdD48L3N2Zz4=",
+            "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2010%2010%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23f00%22%3E%3Canimate%20attributeName%3D%22fill%22%20values%3D%22%23f00%3B%2300f%22%20dur%3D%221s%22%2F%3E%3C%2Frect%3E%3C%2Fsvg%3E",
+        ] {
+            let svg = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><image width="10" height="10" href="{href}"/></svg>"#
+            );
+            let rendered = render_svg_to_png(svg.as_bytes(), 64, 100_000).unwrap();
+            let pixmap = tiny_skia::Pixmap::decode_png(&rendered.bytes).unwrap();
+            assert!(
+                pixmap.pixels().iter().any(|pixel| pixel.alpha() > 0),
+                "nested image did not render for {href}"
+            );
+        }
+    }
+
+    #[test]
+    fn nested_svg_images_cannot_reach_outside_the_document() {
+        // An unsafe nested document makes the whole image fail the check.
+        for inner in [
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>"#,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><image href="https://example.com/a.png"/></svg>"#,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><style>@import "https://example.com/a.css";</style></svg>"#,
+        ] {
+            let encoded = base64::engine::general_purpose::STANDARD.encode(inner);
+            let svg = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,{encoded}"/></svg>"#
+            );
+            assert_eq!(
+                render_svg_to_png(svg.as_bytes(), 64, 100_000).unwrap_err(),
+                RabbySafeSvgError::UnsafeContent
+            );
+        }
+    }
+
+    #[test]
+    fn reads_embedded_raster_dimensions_and_rejects_oversized_ones() {
+        // 1x1 GIF, a JPEG SOF0 header (2x3) and a VP8L WebP header (5x7).
+        let gif = base64::engine::general_purpose::STANDARD
+            .decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+            .unwrap();
+        assert_eq!(embedded_gif_dimensions(&gif).unwrap(), (1, 1));
+        let jpeg = [
+            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x04, 0x00, 0x00, 0xFF, 0xC0, 0x00, 0x0B, 0x08, 0x00,
+            0x03, 0x00, 0x02, 0x01, 0x01, 0x11, 0x00, 0xFF, 0xD9,
+        ];
+        assert_eq!(embedded_jpeg_dimensions(&jpeg).unwrap(), (2, 3));
+        let mut webp = b"RIFF\x00\x00\x00\x00WEBPVP8L\x00\x00\x00\x00\x2F".to_vec();
+        let bits: u32 = 4 | (6 << 14);
+        webp.extend_from_slice(&bits.to_le_bytes());
+        webp.resize(32, 0);
+        assert_eq!(embedded_webp_dimensions(&webp).unwrap(), (5, 7));
+
+        let huge_gif = [
+            b'G', b'I', b'F', b'8', b'9', b'a', 0xFF, 0xFF, 0xFF, 0xFF, 0, 0,
+        ];
+        assert_eq!(
+            embedded_gif_dimensions(&huge_gif).unwrap_err(),
+            RabbySafeSvgError::UnsafeContent
+        );
+        assert!(embedded_jpeg_dimensions(&[0xFF, 0xD8, 0xFF]).is_err());
+        assert!(embedded_webp_dimensions(b"RIFF").is_err());
+
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><image width="1" height="1" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"/></svg>"#;
+        assert!(render_svg_to_png(svg.as_bytes(), 64, 100_000).is_ok());
+    }
+
+    #[test]
+    fn decodes_data_urls_strictly() {
+        assert_eq!(
+            decode_data_url("data:image/svg+xml;utf8,%3Csvg%2F%3E", 1024).unwrap(),
+            ("image/svg+xml".to_owned(), b"<svg/>".to_vec())
+        );
+        assert_eq!(
+            decode_data_url("DATA:Image/PNG;base64,AAEC", 1024).unwrap(),
+            ("image/png".to_owned(), vec![0, 1, 2])
+        );
+        assert!(decode_data_url("https://example.com/a.png", 1024).is_none());
+        assert!(decode_data_url("data:image/png;base64,AAAA", 2).is_none());
+        assert!(decode_data_url("data:image/svg+xml,%zz", 1024).is_none());
     }
 
     #[test]

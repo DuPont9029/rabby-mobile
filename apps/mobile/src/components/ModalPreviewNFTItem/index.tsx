@@ -5,6 +5,7 @@ import { AppBottomSheetModal } from '../customized/BottomSheet';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { getChain } from '@/utils/chain';
 import { Media } from '../Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT } from '@/assets/icons/nft';
 import { StyleSheet, View } from 'react-native';
 import { abbreviateNumber } from '@/utils/math';
@@ -139,6 +140,7 @@ export default function ModalPreviewNFTItem({
             type={nft?.content_type}
             src={nft?.content}
             thumbnail={nft?.content}
+            onchainNft={toOnchainNftRef(nft)}
             safeSvgVariant="detail"
             style={styles.media}
             mediaStyle={styles.media}

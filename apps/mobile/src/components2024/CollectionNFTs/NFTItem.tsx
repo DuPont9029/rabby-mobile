@@ -2,6 +2,7 @@ import { IconDefaultNFT } from '@/assets/icons/nft';
 import { Text } from '@/components';
 import { CustomTouchableOpacity } from '@/components/CustomTouchableOpacity';
 import { MEDIA_TYPE, Media } from '@/components/Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { useTheme2024 } from '@/hooks/theme';
 import { abbreviateNumber } from '@/utils/math';
 import React, { useMemo } from 'react';
@@ -46,6 +47,7 @@ export const Item = ({ item, onPress }: ItemProps) => {
         type={item?.content_type || MEDIA_TYPE.IMAGE_URL}
         src={item?.content}
         thumbnail={item?.content}
+        onchainNft={toOnchainNftRef(item)}
         mediaStyle={styles.images}
         style={styles.images}
         playIconSize={36}

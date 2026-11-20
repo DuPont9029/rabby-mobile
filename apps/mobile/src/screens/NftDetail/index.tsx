@@ -8,6 +8,7 @@ import { useTheme2024 } from '@/hooks/theme';
 import { Text } from '@/components';
 import type { NFTItem, TokenItem } from '@rabby-wallet/rabby-api/dist/types';
 import { Media } from '@/components/Media';
+import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT, IconNumberNFT } from '@/assets/icons/nft';
 import { CHAINS_ENUM } from '@/constant/chains';
 import {
@@ -92,6 +93,7 @@ export const NFTDetailScreen = () => {
               type="image_url"
               src={(token as NFTItem)?.thumbnail_url}
               thumbnail={(token as NFTItem)?.thumbnail_url}
+              onchainNft={toOnchainNftRef(token as NFTItem)}
               mediaStyle={styles.imagesAvatar}
               style={styles.imagesAvatar}
               playIconSize={36}
@@ -320,6 +322,7 @@ export const NFTDetailScreen = () => {
               failedPlaceholder={<IconDefaultNFT width={'100%'} height={360} />}
               type={iToken?.content_type}
               src={iToken?.content}
+              onchainNft={toOnchainNftRef(iToken)}
               safeSvgVariant="detail"
               style={styles.images}
               mediaStyle={styles.innerImages}

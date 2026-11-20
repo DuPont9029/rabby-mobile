@@ -2,6 +2,7 @@ import { openapi } from '@/core/request';
 import { NFTItemEntity } from '@/databases/entities/nftItem';
 import { syncRemoteNFTs } from '@/databases/sync/assets';
 import { isValidCollection } from '@/utils/collections';
+import { appendCustomOnchainNfts } from '@/utils/customOnchainNfts';
 import type { Collection, NFTItem } from '@rabby-wallet/rabby-api/dist/types';
 
 export type NftSnapshotLoadResult =
@@ -29,7 +30,7 @@ export const batchQueryNFTSnapshotWithLocalCache = async (
       }
       const nfts = await openapi.listNFT(id, isAll, sortByCredit);
       const collectionNfts = await openapi.collectionList({ id, isAll });
-      const nftsWithCollection = nfts
+      const indexedNfts = nfts
         .map(nft => {
           const collection = collectionNfts.find(
             c => `${c.chain}:${c.id}` === nft.collection_id,
@@ -45,6 +46,9 @@ export const batchQueryNFTSnapshotWithLocalCache = async (
         .filter(n => {
           return isValidCollection(n.collection);
         });
+      // NFTs the user imported by contract and token id, re-verified
+      // on-chain; the indexed list is returned unchanged on any failure.
+      const nftsWithCollection = await appendCustomOnchainNfts(id, indexedNfts);
       if (!options?.deferPersistence) {
         syncRemoteNFTs(id, nftsWithCollection);
       }
@@ -66,6 +70,9 @@ export const batchQueryNFTSnapshotWithLocalCache = async (
   }
   return {
     status: 'snapshot',
-    nfts: await openapi.listNFT(id, isAll, sortByCredit),
+    nfts: await appendCustomOnchainNfts(
+      id,
+      await openapi.listNFT(id, isAll, sortByCredit),
+    ),
   };
 };

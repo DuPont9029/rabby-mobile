@@ -1,16 +1,29 @@
 import React from 'react';
-import { act, cleanup, fireEvent, render } from '@testing-library/react-native';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from '@testing-library/react-native';
 import { StyleSheet, View } from 'react-native';
 import RNFS, { type SafeSvgResult } from '@rabby-wallet/react-native-fs';
 
 import { Media } from './Media';
+import { loadOnchainNftSvg } from '@/utils/onchainNftMedia';
 
 jest.mock('@rabby-wallet/react-native-fs', () => ({
   __esModule: true,
   default: {
     isSafeSvgRasterizationAvailable: jest.fn(() => true),
+    isSafeSvgDataRasterizationAvailable: jest.fn(() => true),
     resolveSvg: jest.fn(),
+    resolveSvgData: jest.fn(),
   },
+}));
+
+jest.mock('@/utils/onchainNftMedia', () => ({
+  loadOnchainNftSvg: jest.fn(),
 }));
 
 jest.mock('react-native-fast-image', () => {
@@ -305,5 +318,126 @@ describe('Media SVG loading presentation', () => {
     expect(view.getByTestId('media-image').props.source).toEqual({
       uri: PNG_URI,
     });
+  });
+});
+
+describe('Media inline and on-chain artwork fallback', () => {
+  const ONCHAIN_NFT = {
+    chain: 'eth',
+    contractId: '0xff9c1b15b16263c61d017ee9f65c50e4ae0113d7',
+    tokenId: '1',
+  };
+  const INLINE_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(RNFS.isSafeSvgRasterizationAvailable).mockReturnValue(true);
+    jest.mocked(RNFS.isSafeSvgDataRasterizationAvailable).mockReturnValue(true);
+    jest.mocked(RNFS.resolveSvgData).mockResolvedValue(readyResult());
+  });
+
+  afterEach(cleanup);
+
+  it('renders an inline SVG data URL through the native data pipeline', async () => {
+    const view = render(
+      <Media
+        src={`data:image/svg+xml;utf8,${encodeURIComponent(INLINE_SVG)}`}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    expect(await view.findByTestId('media-image')).toBeTruthy();
+    expect(RNFS.resolveSvgData).toHaveBeenCalledWith({
+      svg: INLINE_SVG,
+      variant: 'thumbnail',
+    });
+    expect(view.getByTestId('media-image').props.source).toEqual({
+      uri: PNG_URI,
+    });
+    expect(loadOnchainNftSvg).not.toHaveBeenCalled();
+  });
+
+  it('reads on-chain artwork when the indexed media is missing', async () => {
+    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    const view = render(
+      <Media
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        safeSvgVariant="detail"
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    expect(await view.findByTestId('media-image')).toBeTruthy();
+    expect(loadOnchainNftSvg).toHaveBeenCalledWith(ONCHAIN_NFT);
+    expect(RNFS.resolveSvgData).toHaveBeenCalledWith({
+      svg: INLINE_SVG,
+      variant: 'detail',
+    });
+  });
+
+  it('falls back to on-chain artwork when the indexed SVG fails the safe profile', async () => {
+    jest.mocked(RNFS.resolveSvg).mockResolvedValue({
+      status: 'failed',
+      reason: 'unsafe_svg',
+    });
+    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    const view = render(
+      <Media
+        src={SVG_URL}
+        onchainNft={ONCHAIN_NFT}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    expect(await view.findByTestId('media-image')).toBeTruthy();
+    expect(loadOnchainNftSvg).toHaveBeenCalledWith(ONCHAIN_NFT);
+  });
+
+  it('keeps the failed placeholder when the token has no inline artwork', async () => {
+    jest.mocked(loadOnchainNftSvg).mockResolvedValue(null);
+    const view = render(
+      <Media
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    await waitFor(() => expect(loadOnchainNftSvg).toHaveBeenCalled());
+    expect(view.getByTestId('failed-placeholder')).toBeTruthy();
+    expect(view.queryByTestId('media-image')).toBeNull();
+    expect(RNFS.resolveSvgData).not.toHaveBeenCalled();
+  });
+
+  it('keeps the failed placeholder when native rendering rejects the artwork', async () => {
+    jest.mocked(RNFS.resolveSvgData).mockResolvedValue({
+      status: 'failed',
+      reason: 'unsafe_svg',
+    });
+    const view = render(
+      <Media
+        src={`data:image/svg+xml,${INLINE_SVG}`}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    await waitFor(() => expect(RNFS.resolveSvgData).toHaveBeenCalled());
+    expect(view.getByTestId('failed-placeholder')).toBeTruthy();
+    expect(view.queryByTestId('media-image')).toBeNull();
+  });
+
+  it('does not try any fallback for remote media without an on-chain reference', () => {
+    const view = render(
+      <Media
+        src="https://example.com/a.png"
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    expect(view.getByTestId('failed-placeholder')).toBeTruthy();
+    expect(RNFS.resolveSvgData).not.toHaveBeenCalled();
+    expect(loadOnchainNftSvg).not.toHaveBeenCalled();
   });
 });
