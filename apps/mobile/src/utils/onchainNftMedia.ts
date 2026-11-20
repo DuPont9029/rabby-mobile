@@ -33,6 +33,32 @@ const ERC1155_BALANCE_OF = '0x00fdd58e'; // balanceOf(address,uint256)
 
 const MAX_CONCURRENT_CALLS = 3;
 const MAX_CACHE_ENTRIES = 300;
+/** Delays before re-reading the chain after a temporary failure. */
+export const ONCHAIN_RETRY_DELAYS_MS = [2_000, 6_000, 15_000];
+/** A hung RPC request must not hold a call slot (and every later NFT) forever. */
+export const ETH_CALL_TIMEOUT_MS = 15_000;
+
+class EthCallTimeoutError extends Error {
+  constructor() {
+    super('eth_call timed out');
+    this.name = 'EthCallTimeoutError';
+  }
+}
+
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new EthCallTimeoutError()), ms);
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 
 let activeCalls = 0;
 const waitingCalls: Array<() => void> = [];
@@ -59,11 +85,14 @@ const encodeTokenId = (tokenId: string) =>
 
 const ethCall = (chain: string, to: string, data: string) =>
   withCallSlot(async () => {
-    const result: unknown = await customRPCServiceApi.defaultEthRPC({
-      chainServerId: chain,
-      method: 'eth_call',
-      params: [{ to, data }, 'latest'],
-    });
+    const result: unknown = await withTimeout(
+      customRPCServiceApi.defaultEthRPC({
+        chainServerId: chain,
+        method: 'eth_call',
+        params: [{ to, data }, 'latest'],
+      }),
+      ETH_CALL_TIMEOUT_MS,
+    );
     return typeof result === 'string' && /^0x[0-9a-fA-F]*$/.test(result)
       ? result
       : null;
@@ -93,32 +122,50 @@ const isValidRef = ({ chain, contractId, tokenId }: OnchainNftRef) => {
   }
 };
 
-/** Reads `tokenURI` (ERC-721), falling back to `uri` (ERC-1155). */
-export const fetchTokenUri = async (ref: OnchainNftRef) => {
+/**
+ * Reads `tokenURI` (ERC-721), falling back to `uri` (ERC-1155).
+ * `transient` is true when no URI was found and at least one call failed
+ * (network error, timeout, revert), so the miss may not be definitive.
+ */
+const readTokenUri = async (
+  ref: OnchainNftRef,
+): Promise<{ uri: string | null; transient: boolean }> => {
   if (!isValidRef(ref)) {
-    return null;
+    return { uri: null, transient: false };
   }
   const argument = encodeTokenId(ref.tokenId);
+  let transient = false;
   for (const selector of [ERC721_TOKEN_URI, ERC1155_URI]) {
     try {
       const uri = decodeString(
         await ethCall(ref.chain, ref.contractId, selector + argument),
       );
       if (uri) {
-        return uri;
+        return { uri, transient: false };
       }
     } catch {
-      // Try the next interface.
+      // A revert is the usual answer of the wrong interface, but it cannot
+      // be told apart from an RPC failure here; try the next interface.
+      transient = true;
     }
   }
-  return null;
+  return { uri: null, transient };
 };
+
+/** Reads `tokenURI` (ERC-721), falling back to `uri` (ERC-1155). */
+export const fetchTokenUri = async (ref: OnchainNftRef) =>
+  (await readTokenUri(ref)).uri;
 
 export type OnchainNftDetails = {
   /** The raw token URI (shown as text only; remote URIs are never fetched). */
   tokenUri: string | null;
   /** Parsed metadata when the token URI is an inline `data:` document. */
   metadata: OnchainNftMetadata | null;
+  /**
+   * True when the read failed in a way that may succeed later (RPC error or
+   * timeout). Such results are not cached, so the next request retries.
+   */
+  transient?: boolean;
 };
 
 const detailsCache = new Map<string, Promise<OnchainNftDetails>>();
@@ -139,13 +186,20 @@ export const loadOnchainNftDetails = (
   if (cached) {
     return cached;
   }
-  const pending = fetchTokenUri(ref)
-    .then(tokenUri => ({
-      tokenUri,
-      metadata: parseInlineTokenUri(tokenUri),
+  const pending: Promise<OnchainNftDetails> = readTokenUri(ref)
+    .then(({ uri, transient }) => ({
+      tokenUri: uri,
+      metadata: parseInlineTokenUri(uri),
+      transient,
     }))
-    .catch(() => ({ tokenUri: null, metadata: null }));
+    .catch(() => ({ tokenUri: null, metadata: null, transient: true }));
   detailsCache.set(key, pending);
+  // Only definitive answers stay cached for the session.
+  pending.then(details => {
+    if (details.transient && detailsCache.get(key) === pending) {
+      detailsCache.delete(key);
+    }
+  });
   if (detailsCache.size > MAX_CACHE_ENTRIES) {
     const oldest = detailsCache.keys().next().value;
     if (oldest !== undefined) {
@@ -161,9 +215,23 @@ export const loadOnchainNftMetadata = async (
 ): Promise<OnchainNftMetadata | null> =>
   (await loadOnchainNftDetails(ref)).metadata;
 
+/**
+ * The NFT's on-chain artwork as SVG markup (or `null`), and whether a miss
+ * may be temporary (worth retrying).
+ */
+export const loadOnchainNftArtwork = async (
+  ref: OnchainNftRef,
+): Promise<{ svg: string | null; transient: boolean }> => {
+  const details = await loadOnchainNftDetails(ref);
+  return {
+    svg: inlineSvgFromMetadata(details.metadata),
+    transient: !!details.transient,
+  };
+};
+
 /** SVG markup of the NFT's on-chain artwork, or `null`. */
 export const loadOnchainNftSvg = async (ref: OnchainNftRef) =>
-  inlineSvgFromMetadata(await loadOnchainNftMetadata(ref));
+  (await loadOnchainNftArtwork(ref)).svg;
 
 /**
  * Whether `owner` holds the token, checked on-chain: `ownerOf` for ERC-721,

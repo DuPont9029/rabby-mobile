@@ -44,7 +44,9 @@
         "hideRaw": "Hide raw metadata",
         "loading": "Loading…",
         "onchain": "On-chain",
-        "unavailable": "Not readable on-chain"
+        "unavailable": "Not readable on-chain",
+        "unreachable": "Could not reach the chain",
+        "retry": "Retry"
       }
     },
     "nftImport": {

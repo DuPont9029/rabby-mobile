@@ -10,7 +10,7 @@ import { StyleSheet, View } from 'react-native';
 import RNFS, { type SafeSvgResult } from '@rabby-wallet/react-native-fs';
 
 import { Media } from './Media';
-import { loadOnchainNftSvg } from '@/utils/onchainNftMedia';
+import { loadOnchainNftArtwork } from '@/utils/onchainNftMedia';
 
 jest.mock('@rabby-wallet/react-native-fs', () => ({
   __esModule: true,
@@ -23,7 +23,8 @@ jest.mock('@rabby-wallet/react-native-fs', () => ({
 }));
 
 jest.mock('@/utils/onchainNftMedia', () => ({
-  loadOnchainNftSvg: jest.fn(),
+  loadOnchainNftArtwork: jest.fn(),
+  ONCHAIN_RETRY_DELAYS_MS: [2_000, 6_000, 15_000],
 }));
 
 jest.mock('react-native-fast-image', () => {
@@ -355,11 +356,14 @@ describe('Media inline and on-chain artwork fallback', () => {
     expect(view.getByTestId('media-image').props.source).toEqual({
       uri: PNG_URI,
     });
-    expect(loadOnchainNftSvg).not.toHaveBeenCalled();
+    expect(loadOnchainNftArtwork).not.toHaveBeenCalled();
   });
 
   it('reads on-chain artwork when the indexed media is missing', async () => {
-    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: INLINE_SVG,
+      transient: false,
+    });
     const view = render(
       <Media
         src=""
@@ -370,7 +374,7 @@ describe('Media inline and on-chain artwork fallback', () => {
     );
 
     expect(await view.findByTestId('media-image')).toBeTruthy();
-    expect(loadOnchainNftSvg).toHaveBeenCalledWith(ONCHAIN_NFT);
+    expect(loadOnchainNftArtwork).toHaveBeenCalledWith(ONCHAIN_NFT);
     expect(RNFS.resolveSvgData).toHaveBeenCalledWith({
       svg: INLINE_SVG,
       variant: 'detail',
@@ -382,7 +386,10 @@ describe('Media inline and on-chain artwork fallback', () => {
       status: 'failed',
       reason: 'unsafe_svg',
     });
-    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: INLINE_SVG,
+      transient: false,
+    });
     const view = render(
       <Media
         src={SVG_URL}
@@ -392,11 +399,14 @@ describe('Media inline and on-chain artwork fallback', () => {
     );
 
     expect(await view.findByTestId('media-image')).toBeTruthy();
-    expect(loadOnchainNftSvg).toHaveBeenCalledWith(ONCHAIN_NFT);
+    expect(loadOnchainNftArtwork).toHaveBeenCalledWith(ONCHAIN_NFT);
   });
 
   it('keeps the failed placeholder when the token has no inline artwork', async () => {
-    jest.mocked(loadOnchainNftSvg).mockResolvedValue(null);
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: null,
+      transient: false,
+    });
     const view = render(
       <Media
         src=""
@@ -405,7 +415,7 @@ describe('Media inline and on-chain artwork fallback', () => {
       />,
     );
 
-    await waitFor(() => expect(loadOnchainNftSvg).toHaveBeenCalled());
+    await waitFor(() => expect(loadOnchainNftArtwork).toHaveBeenCalled());
     expect(view.getByTestId('failed-placeholder')).toBeTruthy();
     expect(view.queryByTestId('media-image')).toBeNull();
     expect(RNFS.resolveSvgData).not.toHaveBeenCalled();
@@ -429,7 +439,10 @@ describe('Media inline and on-chain artwork fallback', () => {
   });
 
   it('opens inline artwork on press once it is shown', async () => {
-    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: INLINE_SVG,
+      transient: false,
+    });
     const onPress = jest.fn();
     const view = render(
       <Media
@@ -444,6 +457,54 @@ describe('Media inline and on-chain artwork fallback', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  it('retries the chain after a temporary failure instead of giving up', async () => {
+    jest.useFakeTimers();
+    jest
+      .mocked(loadOnchainNftArtwork)
+      .mockResolvedValueOnce({ svg: null, transient: true })
+      .mockResolvedValueOnce({ svg: INLINE_SVG, transient: false });
+    const view = render(
+      <Media
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(view.getByTestId('failed-placeholder')).toBeTruthy();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(2_000);
+    });
+    expect(view.getByTestId('media-image')).toBeTruthy();
+    expect(loadOnchainNftArtwork).toHaveBeenCalledTimes(2);
+    jest.useRealTimers();
+  });
+
+  it('re-renders the artwork when the rendered image cannot be shown', async () => {
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: INLINE_SVG,
+      transient: false,
+    });
+    const view = render(
+      <Media
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    const image = await view.findByTestId('media-image');
+    expect(RNFS.resolveSvgData).toHaveBeenCalledTimes(1);
+    act(() => image.props.onError());
+
+    expect(await view.findByTestId('media-image')).toBeTruthy();
+    expect(RNFS.resolveSvgData).toHaveBeenCalledTimes(2);
+  });
+
   it('does not try any fallback for remote media without an on-chain reference', () => {
     const view = render(
       <Media
@@ -454,6 +515,6 @@ describe('Media inline and on-chain artwork fallback', () => {
 
     expect(view.getByTestId('failed-placeholder')).toBeTruthy();
     expect(RNFS.resolveSvgData).not.toHaveBeenCalled();
-    expect(loadOnchainNftSvg).not.toHaveBeenCalled();
+    expect(loadOnchainNftArtwork).not.toHaveBeenCalled();
   });
 });
