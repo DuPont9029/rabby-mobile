@@ -8,3 +8,6 @@ export { NFTDetailScreen } from '@/screens/NftDetail';
 export { TokenMarketInfoScreen } from '@/screens/TokenDetail/TokenMarketInfoScreen';
 export { default as NotFoundScreen } from '@/screens/NotFound';
 export { default as MyBundleScreen } from '@/screens/Assets/MyBundle';
+export { SolanaHomeScreen } from '@/screens/Solana/SolanaHomeScreen';
+export { SolanaSendScreen } from '@/screens/Solana/SolanaSendScreen';
+export { SolanaNftDetailScreen } from '@/screens/Solana/SolanaNftDetailScreen';

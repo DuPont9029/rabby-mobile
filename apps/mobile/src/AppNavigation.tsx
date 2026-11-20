@@ -46,6 +46,9 @@ import {
   NFTDetailScreen,
   NotFoundScreen,
   ScannerScreen,
+  SolanaHomeScreen,
+  SolanaNftDetailScreen,
+  SolanaSendScreen,
   TokenDetailScreen,
   TokenMarketInfoScreen,
 } from '@/perfs/loadables/screens';
@@ -776,6 +779,30 @@ export default function AppNavigation() {
                         // backgroundColor: colors['neutral-bg-2'],
                         backgroundColor: 'transparent',
                       },
+                    })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.SolanaHome}
+                    component={SolanaHomeScreen}
+                    options={mergeScreenOptions({
+                      headerShown: true,
+                      headerTitle: 'Solana',
+                    })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.SolanaSend}
+                    component={SolanaSendScreen}
+                    options={mergeScreenOptions({
+                      headerShown: true,
+                      headerTitle: 'Solana',
+                    })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.SolanaNftDetail}
+                    component={SolanaNftDetailScreen}
+                    options={mergeScreenOptions({
+                      headerShown: true,
+                      headerTitle: 'Solana NFT',
                     })}
                   />
                   <RootStack.Screen
