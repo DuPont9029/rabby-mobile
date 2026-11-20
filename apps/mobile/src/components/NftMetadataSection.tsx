@@ -7,6 +7,7 @@ import { Text } from '@/components/Typography';
 import { useTheme2024 } from '@/hooks/theme';
 import {
   loadOnchainNftDetails,
+  ONCHAIN_RETRY_DELAYS_MS,
   type OnchainNftDetails,
 } from '@/utils/onchainNftMedia';
 import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
@@ -48,20 +49,46 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
   const contractId = ref?.contractId;
   const tokenId = ref?.tokenId;
 
+  // Bumped to re-read the chain (automatic retry or a tap on "Retry").
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    setAttempt(0);
+  }, [chain, contractId, tokenId]);
+
   useEffect(() => {
     let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     if (!chain || !contractId || !tokenId) {
       setState({ status: 'done', details: null });
       return;
     }
     setState({ status: 'loading' });
     loadOnchainNftDetails({ chain, contractId, tokenId })
-      .then(details => active && setState({ status: 'done', details }))
-      .catch(() => active && setState({ status: 'done', details: null }));
+      .catch(
+        (): OnchainNftDetails => ({
+          tokenUri: null,
+          metadata: null,
+          transient: true,
+        }),
+      )
+      .then(details => {
+        if (!active) {
+          return;
+        }
+        setState({ status: 'done', details });
+        const delay = ONCHAIN_RETRY_DELAYS_MS[attempt];
+        if (details.transient && delay !== undefined) {
+          retryTimer = setTimeout(() => setAttempt(value => value + 1), delay);
+        }
+      });
     return () => {
       active = false;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
     };
-  }, [chain, contractId, tokenId]);
+  }, [attempt, chain, contractId, tokenId]);
 
   const details = state.status === 'done' ? state.details : null;
   const metadata = details?.metadata;
@@ -71,9 +98,14 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
     : nft.is_erc721
     ? 'ERC-721'
     : '-';
+  const unreachable = !!details?.transient && !details.tokenUri;
   const storage =
     state.status === 'loading'
       ? t('page.nftDetail.metadata.loading', { defaultValue: 'Loading…' })
+      : unreachable
+      ? t('page.nftDetail.metadata.unreachable', {
+          defaultValue: 'Could not reach the chain',
+        })
       : describeStorage(details?.tokenUri ?? null, t);
 
   const rows: Array<[string, string]> = [
@@ -116,6 +148,15 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
           </Text>
         </View>
       ))}
+      {unreachable && state.status === 'done' ? (
+        <TouchableOpacity
+          onPress={() => setAttempt(value => value + 1)}
+          testID="nft-metadata-retry">
+          <Text style={styles.toggle}>
+            {t('page.nftDetail.metadata.retry', { defaultValue: 'Retry' })}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
       {description ? (
         <View style={styles.block}>
           <Text style={styles.label}>

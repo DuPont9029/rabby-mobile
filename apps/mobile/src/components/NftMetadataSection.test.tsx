@@ -11,6 +11,7 @@ jest.mock('@/components/Typography', () => ({
 
 jest.mock('@/utils/onchainNftMedia', () => ({
   loadOnchainNftDetails: jest.fn(),
+  ONCHAIN_RETRY_DELAYS_MS: [],
 }));
 
 jest.mock('@/hooks/theme', () => ({
@@ -69,6 +70,27 @@ describe('NftMetadataSection', () => {
     expect(await view.findByText('ipfs://bafy/7.json')).toBeTruthy();
     expect(view.getByText('Indexed description')).toBeTruthy();
     expect(view.queryByTestId('nft-metadata-raw-toggle')).toBeNull();
+  });
+
+  it('offers a retry when the chain cannot be reached', async () => {
+    jest
+      .mocked(loadOnchainNftDetails)
+      .mockResolvedValueOnce({
+        tokenUri: null,
+        metadata: null,
+        transient: true,
+      })
+      .mockResolvedValueOnce({
+        tokenUri: 'data:application/json,{}',
+        metadata: {},
+      });
+    const view = render(<NftMetadataSection nft={NFT} />);
+
+    expect(await view.findByText('Could not reach the chain')).toBeTruthy();
+    fireEvent.press(view.getByTestId('nft-metadata-retry'));
+
+    expect(await view.findByText('On-chain')).toBeTruthy();
+    expect(loadOnchainNftDetails).toHaveBeenCalledTimes(2);
   });
 
   it('does not query the chain for an NFT without a valid on-chain reference', async () => {

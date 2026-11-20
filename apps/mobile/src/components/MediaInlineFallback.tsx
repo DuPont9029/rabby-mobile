@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   StyleProp,
   TouchableOpacity,
@@ -10,7 +10,11 @@ import FastImage, { FastImageProps, ImageStyle } from 'react-native-fast-image';
 import RNFS, { type SafeSvgVariant } from '@rabby-wallet/react-native-fs';
 
 import { inlineImageToSvg } from '@/utils/onchainNftMediaCore';
-import { loadOnchainNftSvg, type OnchainNftRef } from '@/utils/onchainNftMedia';
+import {
+  loadOnchainNftArtwork,
+  ONCHAIN_RETRY_DELAYS_MS,
+  type OnchainNftRef,
+} from '@/utils/onchainNftMedia';
 
 type FallbackState =
   | { status: 'pending' }
@@ -27,6 +31,9 @@ type FallbackState =
  * the NFT's creator are never fetched. If nothing renders, the original
  * failed placeholder stays.
  */
+/** Re-render attempts when the rendered PNG cannot be displayed. */
+const MAX_IMAGE_RELOADS = 2;
+
 export const MediaInlineFallback = ({
   src,
   thumbnail,
@@ -52,44 +59,82 @@ export const MediaInlineFallback = ({
   onPress?: TouchableOpacityProps['onPress'];
 }) => {
   const [state, setState] = useState<FallbackState>({ status: 'pending' });
+  // Bumped to re-run the resolution (on-chain retry or image reload).
+  const [attempt, setAttempt] = useState(0);
+  const [imageReloads, setImageReloads] = useState(0);
   const chain = onchainNft?.chain;
   const contractId = onchainNft?.contractId;
   const tokenId = onchainNft?.tokenId;
 
   useEffect(() => {
+    setAttempt(0);
+    setImageReloads(0);
+  }, [chain, contractId, src, thumbnail, tokenId, variant]);
+
+  useEffect(() => {
     let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     setState({ status: 'pending' });
-    const resolve = async () => {
+    const resolve = async (): Promise<{
+      uri: string | null;
+      retry: boolean;
+    }> => {
       if (!RNFS.isSafeSvgDataRasterizationAvailable()) {
-        return null;
+        return { uri: null, retry: false };
       }
-      const svg =
-        inlineImageToSvg(src) ??
-        inlineImageToSvg(thumbnail) ??
-        (chain && contractId && tokenId
-          ? await loadOnchainNftSvg({ chain, contractId, tokenId })
-          : null);
+      let svg = inlineImageToSvg(src) ?? inlineImageToSvg(thumbnail);
+      let transient = false;
+      if (!svg && chain && contractId && tokenId) {
+        const artwork = await loadOnchainNftArtwork({
+          chain,
+          contractId,
+          tokenId,
+        });
+        svg = artwork.svg;
+        transient = artwork.transient;
+      }
       if (!svg || !active) {
-        return null;
+        return { uri: null, retry: transient };
       }
       const result = await RNFS.resolveSvgData({ svg, variant });
-      return result.status === 'ready' ? result.uri : null;
+      return result.status === 'ready'
+        ? { uri: result.uri, retry: false }
+        : { uri: null, retry: result.reason === 'io_error' };
     };
     resolve()
-      .then(uri => {
-        if (active) {
-          setState(uri ? { status: 'ready', uri } : { status: 'failed' });
+      .catch(() => ({ uri: null, retry: true }))
+      .then(({ uri, retry }) => {
+        if (!active) {
+          return;
         }
-      })
-      .catch(() => {
-        if (active) {
-          setState({ status: 'failed' });
+        if (uri) {
+          setState({ status: 'ready', uri });
+          return;
+        }
+        setState({ status: 'failed' });
+        const delay = ONCHAIN_RETRY_DELAYS_MS[attempt];
+        if (retry && delay !== undefined) {
+          retryTimer = setTimeout(() => setAttempt(value => value + 1), delay);
         }
       });
     return () => {
       active = false;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
     };
-  }, [chain, contractId, src, thumbnail, tokenId, variant]);
+  }, [attempt, chain, contractId, src, thumbnail, tokenId, variant]);
+
+  const handleImageError = useCallback(() => {
+    // The rendered PNG could not be shown (e.g. evicted from the cache):
+    // render it again rather than leaving an empty frame.
+    if (imageReloads < MAX_IMAGE_RELOADS) {
+      setImageReloads(value => value + 1);
+      setAttempt(value => value + 1);
+    } else {
+      setState({ status: 'failed' });
+    }
+  }, [imageReloads]);
 
   if (state.status !== 'ready') {
     return <View style={containerStyle}>{failedPlaceholder}</View>;
@@ -100,6 +145,7 @@ export const MediaInlineFallback = ({
       style={mediaStyle}
       resizeMode={resizeMode}
       onLoad={onReady}
+      onError={handleImageError}
     />
   );
   return onPress ? (

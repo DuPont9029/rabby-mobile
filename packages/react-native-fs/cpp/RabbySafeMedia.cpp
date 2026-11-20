@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <thread>
 #include <unordered_map>
 #include <utility>
@@ -467,6 +468,10 @@ class SafeMediaService final
     uint32_t cachedWidth = 0;
     uint32_t cachedHeight = 0;
     if (readPngDimensions(targetPath, &cachedWidth, &cachedHeight)) {
+      // Mark the hit as recently used: the cache is pruned oldest-first by
+      // mtime, and a file that is about to be displayed must not be the next
+      // one evicted.
+      utimes(targetPath.c_str(), nullptr);
       resolveCallbacks(
           invoker_,
           {std::move(callbacks)},
@@ -519,6 +524,10 @@ class SafeMediaService final
     uint32_t cachedWidth = 0;
     uint32_t cachedHeight = 0;
     if (readPngDimensions(targetPath, &cachedWidth, &cachedHeight)) {
+      // Mark the hit as recently used: the cache is pruned oldest-first by
+      // mtime, and a file that is about to be displayed must not be the next
+      // one evicted.
+      utimes(targetPath.c_str(), nullptr);
       resolveCallbacks(
           invoker_,
           {std::move(callbacks)},
