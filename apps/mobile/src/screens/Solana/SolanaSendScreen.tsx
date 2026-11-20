@@ -28,12 +28,12 @@ import {
   waitForConfirmation,
 } from '@/core/solana/transfer';
 import { signTransaction, PROGRAM_IDS } from '@/core/solana/tx';
+import { SolanaRpcError } from '@/core/solana/rpc';
+import { base58 } from '@scure/base';
 import { useSolanaAccount } from './useSolana';
 
 /** A review older than this is rebuilt before signing (blockhash expiry). */
 const REVIEW_MAX_AGE_MS = 40_000;
-/** Lamports kept aside when the user taps "Max" for SOL (fee headroom). */
-const SOL_MAX_FEE_RESERVE = 50_000n;
 
 type Phase =
   | { step: 'edit' }
@@ -56,6 +56,8 @@ export const SolanaSendScreen = () => {
 
   const [recipient, setRecipient] = useState('');
   const [amountText, setAmountText] = useState('');
+  // SOL "Max": send the whole balance minus the exact network fee.
+  const [sendAll, setSendAll] = useState(false);
   const [phase, setPhase] = useState<Phase>({ step: 'edit' });
   const [problem, setProblem] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
@@ -81,6 +83,7 @@ export const SolanaSendScreen = () => {
           mint: asset.mint,
           decimals: asset.decimals,
           tokenProgram: asset.tokenProgram,
+          sourceAccount: asset.sourceAccount,
         };
       default:
         return {
@@ -89,6 +92,7 @@ export const SolanaSendScreen = () => {
           tokenProgram: asset.tokenProgram || PROGRAM_IDS.token,
           programmable: asset.programmable,
           ruleSet: asset.ruleSet,
+          sourceAccount: asset.sourceAccount,
         };
     }
   }, [asset]);
@@ -111,6 +115,10 @@ export const SolanaSendScreen = () => {
       off_curve_recipient: t('page.solana.issue.offCurve', {
         defaultValue:
           'No wallet can own this address; tokens sent there would be lost.',
+      }),
+      program_owned_recipient: t('page.solana.issue.programOwned', {
+        defaultValue:
+          'This address belongs to a program, not a wallet; tokens sent there may be lost.',
       }),
       amount_zero: t('page.solana.issue.amountZero', {
         defaultValue: 'Enter an amount.',
@@ -137,22 +145,26 @@ export const SolanaSendScreen = () => {
     return messages[issue];
   };
 
-  const prepare = async () => {
+  /** Builds and simulates the transfer; `true` when a review is shown. */
+  const prepare = async (): Promise<boolean> => {
+    // Any previous review is dropped first: nothing stale can be confirmed.
+    setPhase({ step: 'edit' });
     if (!account) {
-      return;
+      return false;
     }
     setProblem(null);
     setLogs([]);
     let amount = 1n;
-    if (asset.kind !== 'nft') {
+    const solSendAll = asset.kind === 'sol' && sendAll;
+    if (asset.kind !== 'nft' && !solSendAll) {
       const parsed = parseAmount(amountText, decimals);
       if (parsed === null || parsed <= 0n) {
         setProblem(issueText('amount_zero'));
-        return;
+        return false;
       }
       if (parsed > balance) {
         setProblem(issueText('insufficient_balance'));
-        return;
+        return false;
       }
       amount = parsed;
     }
@@ -164,8 +176,10 @@ export const SolanaSendScreen = () => {
         to: recipient,
         asset: transferAsset,
         amount,
+        sendAll: solSendAll,
       });
       setPhase({ step: 'review', prepared, preparedAt: Date.now() });
+      return true;
     } catch (error) {
       setPhase({ step: 'edit' });
       if (error instanceof TransferError) {
@@ -178,8 +192,15 @@ export const SolanaSendScreen = () => {
           }),
         );
       }
+      return false;
     }
   };
+
+  /** A JSON-RPC error (or 4xx) means the node refused it: nothing was sent. */
+  const isDefiniteRejection = (error: unknown) =>
+    error instanceof SolanaRpcError &&
+    typeof error.code === 'number' &&
+    (error.code < 0 || (error.code >= 400 && error.code < 500));
 
   const confirmAndSend = async () => {
     if (!account || phase.step !== 'review' || busy.current) {
@@ -188,38 +209,67 @@ export const SolanaSendScreen = () => {
     if (Date.now() - phase.preparedAt > REVIEW_MAX_AGE_MS) {
       // The blockhash is about to expire: rebuild, and let the user review
       // the refreshed numbers before signing.
-      await prepare();
-      setProblem(
-        t('page.solana.reviewRefreshed', {
-          defaultValue: 'The review was refreshed. Check it and confirm again.',
-        }),
-      );
+      if (await prepare()) {
+        setProblem(
+          t('page.solana.reviewRefreshed', {
+            defaultValue:
+              'The review was refreshed. Check it and confirm again.',
+          }),
+        );
+      }
       return;
     }
     busy.current = true;
     const { prepared } = phase;
     setPhase({ step: 'sending' });
+    let wire: Uint8Array;
     try {
-      const wire = await withSolanaSigner(account, privateKey =>
-        signTransaction(prepared.message, account.address, privateKey),
+      wire = await withSolanaSigner(account, privateKey =>
+        signTransaction(prepared.message, prepared.from, privateKey),
       );
-      const rpc = getSolanaRpc();
-      const signature = await rpc.sendTransaction(wire);
-      setPhase({ step: 'sent', signature, status: 'pending' });
+    } catch {
+      busy.current = false;
+      setPhase({ step: 'edit' });
+      setProblem(
+        t('page.solana.signFailed', {
+          defaultValue: 'Could not sign with this wallet.',
+        }),
+      );
+      return;
+    }
+    // The transaction id is the first signature: known before sending, so a
+    // lost RPC response never leads to a second, different transaction.
+    const signature = base58.encode(wire.slice(1, 65));
+    const rpc = getSolanaRpc();
+    try {
+      const returned = await rpc.sendTransaction(wire);
+      if (returned !== signature) {
+        // A misbehaving RPC: keep watching the transaction we signed.
+        console.warn('[solana] RPC returned a different signature');
+      }
+    } catch (error) {
+      if (isDefiniteRejection(error)) {
+        busy.current = false;
+        setPhase({ step: 'edit' });
+        setProblem(
+          t('page.solana.sendFailed', {
+            defaultValue: 'The transfer was not sent: {{reason}}',
+            reason: error instanceof Error ? error.message : 'unknown error',
+          }),
+        );
+        return;
+      }
+      // Network error/timeout: it may have been broadcast. Track it until
+      // its blockhash expires instead of letting the user send it twice.
+    }
+    setPhase({ step: 'sent', signature, status: 'pending' });
+    try {
       const status = await waitForConfirmation(
         rpc,
         signature,
         prepared.lastValidBlockHeight,
       );
       setPhase({ step: 'sent', signature, status });
-    } catch (error) {
-      setPhase({ step: 'edit' });
-      setProblem(
-        t('page.solana.sendFailed', {
-          defaultValue: 'The transfer was not sent: {{reason}}',
-          reason: error instanceof Error ? error.message : 'unknown error',
-        }),
-      );
     } finally {
       busy.current = false;
     }
@@ -227,21 +277,25 @@ export const SolanaSendScreen = () => {
 
   const setMax = () => {
     if (asset.kind === 'sol') {
-      const max =
-        balance > SOL_MAX_FEE_RESERVE ? balance - SOL_MAX_FEE_RESERVE : 0n;
-      setAmountText(formatAmount(max, 9));
+      // The exact fee is only known after measuring: prepareTransfer sends
+      // the balance minus that fee, and the review shows the real amount.
+      setSendAll(true);
+      setAmountText(formatAmount(balance, 9));
     } else if (asset.kind === 'token') {
+      setSendAll(false);
       setAmountText(formatAmount(balance, decimals));
     }
+    setPhase({ step: 'edit' });
   };
 
   const pasteRecipient = async () => {
     const text = await Clipboard.getString();
     setRecipient(text.trim());
+    setPhase({ step: 'edit' });
   };
 
-  const editable = phase.step === 'edit' || phase.step === 'review';
-  const amountShown = asset.kind === 'nft' ? '1' : amountText || '0';
+  // Inputs are locked while a review is shown: editing means starting over.
+  const editable = phase.step === 'edit';
 
   if (accountState.status === 'error') {
     return (
@@ -352,6 +406,7 @@ export const SolanaSendScreen = () => {
               value={amountText}
               onChangeText={value => {
                 setAmountText(value);
+                setSendAll(false);
                 setPhase({ step: 'edit' });
               }}
               editable={editable}
@@ -378,23 +433,44 @@ export const SolanaSendScreen = () => {
 
       {phase.step === 'review' ? (
         <View style={styles.review} testID="solana-send-review">
-          <Text style={styles.sectionTitle}>
-            {t('page.solana.review', { defaultValue: 'Review' })}
-          </Text>
+          <View style={styles.reviewHeader}>
+            <Text style={styles.sectionTitle}>
+              {t('page.solana.review', { defaultValue: 'Review' })}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setPhase({ step: 'edit' })}
+              testID="solana-send-edit">
+              <Text style={styles.link}>
+                {t('page.solana.edit', { defaultValue: 'Edit' })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {/* Every value below comes from the prepared (signed) transfer,
+              never from the editable inputs. */}
           <ReviewRow
             label={t('page.solana.from', { defaultValue: 'From' })}
-            value={account?.address || ''}
+            value={phase.prepared.from}
           />
           <ReviewRow
             label={t('page.solana.to', { defaultValue: 'To' })}
-            value={recipient.trim()}
+            value={phase.prepared.to}
             strong
           />
           <ReviewRow
             label={t('page.solana.sending', { defaultValue: 'Sending' })}
-            value={`${amountShown} ${symbol}`}
+            value={
+              phase.prepared.asset.kind === 'nft'
+                ? `1 × ${symbol}`
+                : `${formatAmount(phase.prepared.amount, decimals)} ${symbol}`
+            }
             strong
           />
+          {phase.prepared.asset.kind !== 'sol' ? (
+            <ReviewRow
+              label={t('page.solana.mint', { defaultValue: 'Mint' })}
+              value={phase.prepared.asset.mint}
+            />
+          ) : null}
           <ReviewRow
             label={t('page.solana.networkFee', { defaultValue: 'Network fee' })}
             value={`${formatAmount(phase.prepared.feeLamports, 9)} SOL`}
@@ -423,6 +499,25 @@ export const SolanaSendScreen = () => {
               {t('page.solana.warnNewAccount', {
                 defaultValue:
                   'This address has never been used on Solana. Double-check it.',
+              })}
+            </Text>
+          ) : null}
+          {phase.prepared.transferFeeBasisPoints ? (
+            <Text style={styles.warning}>
+              {t('page.solana.warnTransferFee', {
+                defaultValue:
+                  'This token charges a {{percent}}% transfer fee: the recipient receives less than the amount sent.',
+                percent: (
+                  phase.prepared.transferFeeBasisPoints / 100
+                ).toString(),
+              })}
+            </Text>
+          ) : null}
+          {phase.prepared.warnings.includes('recipient_program_owned') ? (
+            <Text style={styles.warning}>
+              {t('page.solana.warnProgramOwned', {
+                defaultValue:
+                  'This address is owned by a program, not a regular wallet. Only continue if you know it is correct.',
               })}
             </Text>
           ) : null}
@@ -563,6 +658,11 @@ const getStyle = createGetStyles2024(({ colors2024 }) => ({
     borderRadius: 14,
     gap: 10,
     backgroundColor: colors2024['neutral-bg-2'],
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   reviewRow: {
     gap: 2,

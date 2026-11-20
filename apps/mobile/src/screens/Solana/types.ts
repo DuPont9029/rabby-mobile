@@ -11,6 +11,8 @@ export type SolanaSendAsset =
       symbol?: string;
       name?: string;
       balance: string;
+      /** Token account shown in the list (the one debited). */
+      sourceAccount: string;
     }
   | {
       kind: 'nft';
@@ -19,6 +21,8 @@ export type SolanaSendAsset =
       programmable: boolean;
       ruleSet: string | null;
       name: string;
+      /** Token account holding the NFT. */
+      sourceAccount: string;
     };
 
 export type SolanaScreenParams = {

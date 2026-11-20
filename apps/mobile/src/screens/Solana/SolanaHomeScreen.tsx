@@ -240,6 +240,7 @@ export const SolanaHomeScreen = () => {
                   symbol: token.symbol,
                   name: token.name,
                   balance: token.amount.toString(),
+                  sourceAccount: token.account,
                 },
               })
             }>
@@ -248,7 +249,10 @@ export const SolanaHomeScreen = () => {
                 {token.symbol || token.name || shortAddress(token.mint)}
               </Text>
               <Text style={styles.muted} numberOfLines={1}>
-                {token.name || shortAddress(token.mint)}
+                {/* Names are self-declared on-chain: always show the mint. */}
+                {`${token.name ? `${token.name} · ` : ''}${shortAddress(
+                  token.mint,
+                )}`}
               </Text>
             </View>
             <Text style={styles.tokenAmount}>

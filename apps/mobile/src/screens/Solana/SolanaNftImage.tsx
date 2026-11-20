@@ -1,9 +1,13 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { StyleProp, View, ViewStyle } from 'react-native';
 import FastImage, { FastImageProps, ImageStyle } from 'react-native-fast-image';
 import RNFS from '@rabby-wallet/react-native-fs';
 
-import { loadOffchainMetadata, resolveMediaUri } from '@/core/solana/portfolio';
+import {
+  fetchTextLimited,
+  loadOffchainMetadata,
+  resolveMediaUri,
+} from '@/core/solana/portfolio';
 import { inlineImageToSvg } from '@/utils/onchainNftMediaCore';
 
 const MAX_SVG_BYTES = 2 * 1024 * 1024;
@@ -23,25 +27,17 @@ const renderSvg = async (svg: string, variant: 'thumbnail' | 'detail') => {
   return result.status === 'ready' ? result.uri : null;
 };
 
-/** Fetches a remote image as SVG text (size-limited), for FastImage misses. */
+/** Fetches a remote image as SVG text (size- and time-limited). */
 const fetchSvg = async (uri: string) => {
-  try {
-    const response = await fetch(uri);
-    const type = response.headers.get('content-type') || '';
-    const length = Number(response.headers.get('content-length') || 0);
-    if (!response.ok || length > MAX_SVG_BYTES) {
-      return null;
-    }
-    const body = await response.text();
-    const head = body.trimStart().slice(0, 256).toLowerCase();
-    const isSvg =
-      type.includes('svg') ||
-      head.startsWith('<svg') ||
-      (head.startsWith('<?xml') && head.includes('<svg'));
-    return isSvg && body.length <= MAX_SVG_BYTES ? body : null;
-  } catch {
+  const body = await fetchTextLimited(uri, MAX_SVG_BYTES);
+  if (!body) {
     return null;
   }
+  const head = body.trimStart().slice(0, 256).toLowerCase();
+  const isSvg =
+    head.startsWith('<svg') ||
+    (head.startsWith('<?xml') && head.includes('<svg'));
+  return isSvg ? body : null;
 };
 
 /**
@@ -66,6 +62,13 @@ export const SolanaNftImage = ({
   placeholder?: ReactNode;
 }) => {
   const [state, setState] = useState<ImageState>({ status: 'loading' });
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -116,10 +119,12 @@ export const SolanaNftImage = ({
     const remote = state.uri;
     fetchSvg(remote)
       .then(svg => (svg ? renderSvg(svg, variant) : null))
-      .then(uri =>
-        setState(uri ? { status: 'rendered', uri } : { status: 'failed' }),
-      )
-      .catch(() => setState({ status: 'failed' }));
+      .catch(() => null)
+      .then(uri => {
+        if (mounted.current) {
+          setState(uri ? { status: 'rendered', uri } : { status: 'failed' });
+        }
+      });
   };
 
   if (state.status === 'remote' || state.status === 'rendered') {

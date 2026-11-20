@@ -162,6 +162,7 @@ export const SolanaNftDetailScreen = () => {
               programmable: nft.programmable,
               ruleSet: nft.ruleSet,
               name: metadata?.name || nft.name,
+              sourceAccount: nft.account,
             },
           })
         }

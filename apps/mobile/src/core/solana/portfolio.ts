@@ -203,6 +203,51 @@ const withFetchSlot = async <T>(task: () => Promise<T>) => {
   }
 };
 
+/**
+ * GETs `url` as text with one overall deadline (headers and body) and a size
+ * cap; the request is aborted on timeout. `null` on any failure.
+ */
+export const fetchTextLimited = async (
+  url: string,
+  maxBytes: number,
+  fetchImpl: typeof fetch = fetch,
+  headers: Record<string, string> = {},
+  timeoutMs = JSON_TIMEOUT_MS,
+): Promise<string | null> => {
+  const controller =
+    typeof AbortController !== 'undefined' ? new AbortController() : null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<null>(resolve => {
+    timer = setTimeout(() => {
+      controller?.abort();
+      resolve(null);
+    }, timeoutMs);
+  });
+  const read = (async () => {
+    const response = await fetchImpl(url, {
+      headers,
+      signal: controller?.signal,
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const length = Number(response.headers.get('content-length') || 0);
+    if (length > maxBytes) {
+      controller?.abort();
+      return null;
+    }
+    const body = await response.text();
+    return body.length > maxBytes ? null : body;
+  })().catch(() => null);
+  try {
+    return await Promise.race([read, deadline]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+};
+
 /** Off-chain JSON metadata, cached on success; failures are retried later. */
 export const loadOffchainMetadata = (
   uri: string,
@@ -217,35 +262,16 @@ export const loadOffchainMetadata = (
     return cached;
   }
   const pending = withFetchSlot(async () => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    const body = await fetchTextLimited(url, MAX_JSON_BYTES, fetchImpl, {
+      accept: 'application/json',
+    });
+    if (body === null) {
+      return null;
+    }
     try {
-      const response = await Promise.race([
-        fetchImpl(url, { headers: { accept: 'application/json' } }),
-        new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error('timeout')),
-            JSON_TIMEOUT_MS,
-          );
-        }),
-      ]);
-      if (!response.ok) {
-        return null;
-      }
-      const length = Number(response.headers.get('content-length') || 0);
-      if (length > MAX_JSON_BYTES) {
-        return null;
-      }
-      const body = await response.text();
-      if (body.length > MAX_JSON_BYTES) {
-        return null;
-      }
       return parseOffchainMetadata(JSON.parse(body));
     } catch {
       return null;
-    } finally {
-      if (timer) {
-        clearTimeout(timer);
-      }
     }
   });
   jsonCache.set(url, pending);

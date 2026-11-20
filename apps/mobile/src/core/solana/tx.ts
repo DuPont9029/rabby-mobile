@@ -223,14 +223,18 @@ export const programmableNftTransfer = ({
   mint,
   ruleSet,
   tokenProgram = PROGRAM_IDS.token,
+  sourceAccount,
 }: {
   owner: string;
   destinationOwner: string;
   mint: string;
   ruleSet?: string | null;
   tokenProgram?: string;
+  /** Token account holding the NFT (defaults to the owner's ATA). */
+  sourceAccount?: string;
 }): Instruction => {
-  const source = associatedTokenAddress(owner, mint, tokenProgram);
+  const source =
+    sourceAccount || associatedTokenAddress(owner, mint, tokenProgram);
   const destination = associatedTokenAddress(
     destinationOwner,
     mint,

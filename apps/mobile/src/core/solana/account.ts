@@ -29,9 +29,22 @@ type HdKeyringLike = {
   mnemonic?: string | null;
   passphrase?: string | null;
   getSeed: (mnemonic: string, passphrase?: string) => Uint8Array;
-  getInfoByAddress: (address: string) => { index?: number } | null;
-  getPathForIndex: (index: number) => string;
+  hdPath?: string;
+  getInfoByAddress: (
+    address: string,
+  ) => { index?: number; hdPath?: string } | null;
 };
+
+const LEDGER_LIVE_BASE = "m/44'/60'/0'/0/0";
+
+/**
+ * EVM path of account `index` under the HD path that account was created
+ * with (a keyring can mix BIP44, Legacy and Ledger Live accounts).
+ */
+const evmPathFor = (hdPath: string, index: number) =>
+  hdPath === LEDGER_LIVE_BASE
+    ? `m/44'/60'/${index}'/0/0`
+    : `${hdPath}/${index}`;
 
 export type SolanaAccount = {
   evmAddress: string;
@@ -53,15 +66,20 @@ export class SolanaAccountError extends Error {
 }
 
 const evmAddressFromSeed = (seed: Uint8Array, path: string) => {
-  const child = HDKey.fromMasterSeed(seed).derive(path);
-  if (!child.publicKey) {
-    throw new SolanaAccountError('seed_mismatch');
+  const master = HDKey.fromMasterSeed(seed);
+  const child = master.derive(path);
+  try {
+    if (!child.publicKey) {
+      throw new SolanaAccountError('seed_mismatch');
+    }
+    const uncompressed = secp256k1.ProjectivePoint.fromHex(
+      child.publicKey,
+    ).toRawBytes(false);
+    return `0x${bytesToHex(keccak_256(uncompressed.slice(1)).slice(-20))}`;
+  } finally {
+    child.wipePrivateData();
+    master.wipePrivateData();
   }
-  const uncompressed = secp256k1.ProjectivePoint.fromHex(
-    child.publicKey,
-  ).toRawBytes(false);
-  child.wipePrivateData();
-  return `0x${bytesToHex(keccak_256(uncompressed.slice(1)).slice(-20))}`;
 };
 
 const loadKeyring = async (evmAddress: string) => {
@@ -81,7 +99,11 @@ const loadKeyring = async (evmAddress: string) => {
  */
 const withVerifiedSeed = async <T>(
   evmAddress: string,
-  use: (seed: Uint8Array, index: number) => T,
+  // Synchronous on purpose: key material is wiped as soon as it returns.
+  use: (
+    seed: Uint8Array,
+    index: number,
+  ) => T extends Promise<unknown> ? never : T,
 ): Promise<T> => {
   const keyring = await loadKeyring(evmAddress);
   if (!keyring?.mnemonic) {
@@ -92,11 +114,15 @@ const withVerifiedSeed = async <T>(
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
     throw new SolanaAccountError('not_hd_account');
   }
-  const seed = Uint8Array.from(
-    keyring.getSeed(keyring.mnemonic, keyring.passphrase || ''),
-  );
+  const hdPath = info?.hdPath || keyring.hdPath;
+  if (!hdPath) {
+    throw new SolanaAccountError('not_hd_account');
+  }
+  const rawSeed = keyring.getSeed(keyring.mnemonic, keyring.passphrase || '');
+  const seed = Uint8Array.from(rawSeed);
+  rawSeed.fill(0);
   try {
-    const derived = evmAddressFromSeed(seed, keyring.getPathForIndex(index));
+    const derived = evmAddressFromSeed(seed, evmPathFor(hdPath, index));
     if (derived.toLowerCase() !== evmAddress.toLowerCase()) {
       throw new SolanaAccountError('seed_mismatch');
     }
@@ -140,7 +166,8 @@ export const getSolanaAccount = async (
  */
 export const withSolanaSigner = async <T>(
   account: SolanaAccount,
-  use: (privateKey: Uint8Array) => T,
+  // Synchronous on purpose: the key is wiped as soon as `use` returns.
+  use: (privateKey: Uint8Array) => T extends Promise<unknown> ? never : T,
 ): Promise<T> =>
   withVerifiedSeed(account.evmAddress, (seed, index) => {
     if (index !== account.index) {

@@ -4,6 +4,7 @@ import {
   formatAmount,
   parseAmount,
   prepareTransfer,
+  waitForConfirmation,
   TransferAsset,
   TransferError,
 } from './transfer';
@@ -50,6 +51,9 @@ const fakeRpc = (overrides: Partial<Record<string, unknown>> = {}) => {
       postLamports: [9_000_000_000n],
     })),
     getPriorityFee: jest.fn(async () => (overrides.priority as bigint) ?? 0n),
+    call: jest.fn(async () => ({ value: overrides.mintParsed ?? null })),
+    getSignatureStatus: jest.fn(),
+    getBlockHeight: jest.fn(),
   };
   return rpc as unknown as SolanaRpc & typeof rpc;
 };
@@ -260,5 +264,135 @@ describe('amount helpers', () => {
     expect(formatAmount(5_000n, 9)).toBe('0.000005');
     expect(formatAmount(123_456_789n, 6, 2)).toBe('123.45');
     expect(formatAmount(0n, 9)).toBe('0');
+  });
+});
+
+describe('review integrity', () => {
+  it('returns exactly the recipient and amount encoded in the message', async () => {
+    const prepared = await prepareTransfer({
+      rpc: fakeRpc(),
+      from: ME,
+      to: `  ${OTHER}\n`,
+      asset: SOL,
+      amount: 1_000_000n,
+    });
+    expect(prepared.to).toBe(OTHER);
+    expect(prepared.from).toBe(ME);
+    expect(prepared.amount).toBe(1_000_000n);
+    expect(prepared.message.accountKeys).toContain(OTHER);
+  });
+
+  it('sends the whole SOL balance minus the exact fee with sendAll', async () => {
+    const prepared = await prepareTransfer({
+      rpc: fakeRpc({ balance: 3_000_000_000n }),
+      from: ME,
+      to: OTHER,
+      asset: SOL,
+      amount: 0n,
+      sendAll: true,
+    });
+    expect(prepared.amount + prepared.feeLamports).toBe(3_000_000_000n);
+  });
+
+  it('debits the token account the user picked', async () => {
+    const source = vectors.derivation[2].address;
+    const prepared = await prepareTransfer({
+      rpc: fakeRpc(),
+      from: ME,
+      to: OTHER,
+      asset: { ...TOKEN, sourceAccount: source } as TransferAsset,
+      amount: 1n,
+    });
+    expect(prepared.message.accountKeys).toContain(source);
+    expect(prepared.message.accountKeys).not.toContain(
+      associatedTokenAddress(ME, USDC),
+    );
+  });
+
+  it('refuses tokens to program-owned addresses and warns for SOL', async () => {
+    const stake = vectors.derivation[2].address;
+    const accounts = {
+      [stake]: {
+        owner: 'Stake11111111111111111111111111111111111111',
+        executable: false,
+        lamports: 1,
+      },
+    };
+    expect(
+      await issueOf(
+        prepareTransfer({
+          rpc: fakeRpc({ accounts }),
+          from: ME,
+          to: stake,
+          asset: TOKEN,
+          amount: 1n,
+        }),
+      ),
+    ).toBe('program_owned_recipient');
+    const sol = await prepareTransfer({
+      rpc: fakeRpc({ accounts }),
+      from: ME,
+      to: stake,
+      asset: SOL,
+      amount: 1_000_000n,
+    });
+    expect(sol.warnings).toContain('recipient_program_owned');
+  });
+
+  it('flags Token-2022 transfer fees', async () => {
+    const prepared = await prepareTransfer({
+      rpc: fakeRpc({
+        mintParsed: {
+          data: {
+            parsed: {
+              info: {
+                extensions: [
+                  {
+                    extension: 'transferFeeConfig',
+                    state: {
+                      newerTransferFee: { transferFeeBasisPoints: 150 },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }),
+      from: ME,
+      to: OTHER,
+      asset: { ...TOKEN, tokenProgram: PROGRAM_IDS.token2022 } as TransferAsset,
+      amount: 1n,
+    });
+    expect(prepared.transferFeeBasisPoints).toBe(150);
+    expect(prepared.warnings).toContain('token_transfer_fee');
+  });
+
+  it('rejects digit grouping so the signed amount matches the typed one', () => {
+    expect(parseAmount('1,000.5', 6)).toBeNull();
+    expect(parseAmount('1.000,5', 6)).toBeNull();
+    expect(parseAmount('1 000', 6)).toBeNull();
+  });
+});
+
+describe('waitForConfirmation', () => {
+  it('re-checks the status before declaring a transaction expired', async () => {
+    const rpc = fakeRpc();
+    rpc.getSignatureStatus
+      .mockResolvedValueOnce({ err: null, confirmationStatus: 'processed' })
+      .mockResolvedValueOnce({ err: null, confirmationStatus: 'confirmed' });
+    rpc.getBlockHeight.mockResolvedValue(101);
+    await expect(
+      waitForConfirmation(rpc, 'sig', 100, { intervalMs: 0 }),
+    ).resolves.toBe('confirmed');
+  });
+
+  it('reports expiry only when still unconfirmed after the deadline', async () => {
+    const rpc = fakeRpc();
+    rpc.getSignatureStatus.mockResolvedValue(null);
+    rpc.getBlockHeight.mockResolvedValue(101);
+    await expect(
+      waitForConfirmation(rpc, 'sig', 100, { intervalMs: 0 }),
+    ).resolves.toBe('expired');
   });
 });

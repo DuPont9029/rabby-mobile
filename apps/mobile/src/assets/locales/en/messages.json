@@ -31,6 +31,10 @@
   },
   "page": {
     "solana": {
+      "signFailed": "Could not sign with this wallet.",
+      "edit": "Edit",
+      "warnTransferFee": "This token charges a {{percent}}% transfer fee: the recipient receives less than the amount sent.",
+      "warnProgramOwned": "This address is owned by a program, not a regular wallet. Only continue if you know it is correct.",
       "standard": "Standard",
       "mint": "Mint",
       "collection": "Collection",
@@ -40,6 +44,7 @@
       "frozen": "Frozen (cannot be sent)",
       "send": "Send",
       "issue": {
+        "programOwned": "This address belongs to a program, not a wallet; tokens sent there may be lost.",
         "invalidAddress": "This is not a valid Solana address.",
         "sameAddress": "You cannot send to the same address.",
         "programAddress": "This address is a program, not a wallet.",

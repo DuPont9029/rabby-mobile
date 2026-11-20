@@ -67,6 +67,12 @@ export const useSolanaPortfolio = (address?: string) => {
     setVersion(value => value + 1);
   }, []);
 
+  // Another account: never show the previous account's balances/NFTs.
+  useEffect(() => {
+    setState({ status: 'loading' });
+    setAttempt(0);
+  }, [address]);
+
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
