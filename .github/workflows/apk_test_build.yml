@@ -1,4 +1,4 @@
-name: Signed APK build (safe-svg font-face fix)
+name: Helios Wallet signed APK build
 
 # Signed APK for the fork, with production runtime, name and icon. Not meant for upstream.
 # It is built from the `regression` build type only to keep the package
@@ -86,15 +86,19 @@ jobs:
           sh ./scripts/fns.sh reset_builtin_assets
           yarn buildworker:prod:android
 
-      - name: Use the production name, icon and manifest
+      - name: Use the production icon and manifest, named Helios Wallet
         working-directory: apps/mobile/android/app/src/regression
         run: |
           # Drop the "Reg Rabby Wallet" name/icon overlay and the regression
-          # deep-link manifest so the main (production) resources apply.
+          # deep-link manifest so the main (production) resources apply, then
+          # override only the launcher name.
           # google-services.json stays: it must match the .regression package.
           rm -rf res
           printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
             '<manifest xmlns:android="http://schemas.android.com/apk/res/android" />' > AndroidManifest.xml
+          mkdir -p res/values
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+            '<resources><string name="app_name">Helios Wallet</string></resources>' > res/values/strings.xml
 
       - name: Assemble signed regression APK (arm64-v8a)
         working-directory: apps/mobile/android
@@ -118,7 +122,7 @@ jobs:
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
           "$apksigner" verify --print-certs "$src" | tee signer.txt
           grep -q "certificate SHA-256 digest: 61b3b565e8959354a57dff200100f2458c39dbf76f73b30eb08499624dab6cc3" signer.txt
-          out="rabby-wallet-fork-svgfix-${GITHUB_SHA::7}-arm64.apk"
+          out="helios-wallet-${GITHUB_SHA::7}-arm64.apk"
           cp "$src" "$out"
           ls -lh "$out"
           echo "path=$out" >> "$GITHUB_OUTPUT"
@@ -132,8 +136,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="apk-prod-${GITHUB_SHA::7}"
+          tag="helios-wallet-${GITHUB_SHA::7}"
           gh release create "$tag" "${{ steps.apk.outputs.path }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Rabby Wallet (fork, production config) + SVG font fix (${GITHUB_SHA::7})" \
-            --notes "Production runtime, name and icon, arm64-v8a, with the fix from fix/safe-svg-strip-font-face. Signed with the fork owner's key. Package com.debank.rabbymobile.regression: installs next to the official app (it cannot update it). Unofficial build: no auto-updates."
+            --title "helios-wallet (${GITHUB_SHA::7})" \
+            --notes "Helios Wallet: Rabby Mobile with production runtime and icon, plus safe on-chain NFT artwork (feat/onchain-nft-media). arm64-v8a, signed with the key of the fork owner. Package com.debank.rabbymobile.regression: installs next to the official Rabby app and updates earlier fork builds. Unofficial build: no auto-updates."
