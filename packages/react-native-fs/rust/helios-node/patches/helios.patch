@@ -1,0 +1,162 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index cae771e..f079e51 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -70,7 +70,7 @@ futures = "0.3.23"
+ tokio = { version = "1", features = ["rt", "sync", "macros"] }
+ 
+ # io
+-reqwest = { version = "0.12.4", features = ["json", "gzip", "deflate", "zstd", "brotli", "hickory-dns"] }
++reqwest = { version = "0.12.4", default-features = false, features = ["json", "gzip", "deflate", "zstd", "brotli", "http2", "charset", "rustls-tls-webpki-roots"] }
+ reqwest-middleware = { version = "0.4.2", features = ["json"] }
+ reqwest-retry = "0.7.0"
+ url = { version = "2.5.2", features = ["serde"] }
+@@ -85,7 +85,6 @@ tracing = "0.1.37"
+ chrono = "0.4.23"
+ thiserror = "1.0.37"
+ superstruct = "0.7.0"
+-openssl = { version = "0.10", features = ["vendored"] }
+ retri = "0.1.1"
+ typenum = "1.17.0"
+ wasmtimer = "0.4.3"
+diff --git a/core/Cargo.toml b/core/Cargo.toml
+index c1a7a94..9060aa4 100644
+--- a/core/Cargo.toml
++++ b/core/Cargo.toml
+@@ -11,6 +11,7 @@ helios-verifiable-api-client = { path = "../verifiable-api/client" }
+ # execution
+ alloy = { workspace = true, features = ["rand"] }
+ alloy-trie.workspace = true
++webpki-root-certs = "1"
+ revm.workspace = true
+ 
+ # async/futures
+@@ -35,7 +36,6 @@ url.workspace = true
+ 
+ [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ jsonrpsee = { version = "0.19.0", features = ["server", "macros", "client-core"] }
+-openssl.workspace = true
+ 
+ [target.'cfg(target_arch = "wasm32")'.dependencies]
+ wasm-bindgen-futures = "0.4.33"
+diff --git a/core/src/execution/providers/rpc.rs b/core/src/execution/providers/rpc.rs
+index 8db972a..eb2f755 100644
+--- a/core/src/execution/providers/rpc.rs
++++ b/core/src/execution/providers/rpc.rs
+@@ -60,6 +60,26 @@ impl<N: NetworkSpec> HistoricalBlockProvider<N> for () {
+     }
+ }
+ 
++/// The Mozilla root store (webpki-root-certs) as reqwest certificates.
++pub fn mozilla_root_certs() -> Vec<alloy::transports::http::reqwest::Certificate> {
++    webpki_root_certs::TLS_SERVER_ROOT_CERTS
++        .iter()
++        .filter_map(|der| {
++            alloy::transports::http::reqwest::Certificate::from_der(der.as_ref()).ok()
++        })
++        .collect()
++}
++
++/// HTTP client for the execution RPC. Trusts only the Mozilla root store
++/// instead of the platform verifier, which on Android needs JNI
++/// initialisation from the host app before first use.
++fn execution_http_client() -> alloy::transports::http::reqwest::Client {
++    alloy::transports::http::reqwest::Client::builder()
++        .tls_certs_only(mozilla_root_certs())
++        .build()
++        .expect("execution RPC HTTP client")
++}
++
+ pub struct RpcExecutionProvider<N: NetworkSpec, B: BlockProvider<N>, H: HistoricalBlockProvider<N>>
+ {
+     provider: RootProvider<N>,
+@@ -83,7 +103,7 @@ impl<N: NetworkSpec, B: BlockProvider<N>, H: HistoricalBlockProvider<N>>
+     ) -> RpcExecutionProvider<N, B, ()> {
+         let client = ClientBuilder::default()
+             .layer(RetryBackoffLayer::new(100, 50, 300))
+-            .http(rpc_url);
++            .http_with_client(execution_http_client(), rpc_url);
+ 
+         let provider = ProviderBuilder::<_, _, N>::default().connect_client(client);
+ 
+@@ -103,7 +123,7 @@ impl<N: NetworkSpec, B: BlockProvider<N>, H: HistoricalBlockProvider<N>>
+     ) -> Self {
+         let client = ClientBuilder::default()
+             .layer(RetryBackoffLayer::new(100, 50, 300))
+-            .http(rpc_url);
++            .http_with_client(execution_http_client(), rpc_url);
+ 
+         let provider = ProviderBuilder::<_, _, N>::default().connect_client(client);
+ 
+diff --git a/core/src/jsonrpc/mod.rs b/core/src/jsonrpc/mod.rs
+index 604f10f..2e2f3f0 100644
+--- a/core/src/jsonrpc/mod.rs
++++ b/core/src/jsonrpc/mod.rs
+@@ -32,6 +32,12 @@ pub async fn start<N: NetworkSpec>(
+     addr: SocketAddr,
+ ) -> Result<ServerHandle> {
+     let server = ServerBuilder::default().build(addr).await?;
++    Ok(server.start(methods(client)?))
++}
++
++/// All JSON-RPC methods, for in-process use without a network server
++/// (`Methods::raw_json_request`).
++pub fn methods<N: NetworkSpec>(client: Arc<dyn HeliosApi<N>>) -> Result<Methods> {
+     let rpc = JsonRpc {
+         client,
+         phantom: PhantomData,
+@@ -48,7 +54,26 @@ pub async fn start<N: NetworkSpec>(
+     methods.merge(web3_methods)?;
+     methods.merge(helios_methods)?;
+ 
+-    Ok(server.start(methods))
++    Ok(methods)
++}
++
++/// Cloneable in-process handle over [`methods`].
++#[derive(Clone)]
++pub struct MethodsHandle(Arc<Methods>);
++
++impl MethodsHandle {
++    /// Runs one JSON-RPC request string and returns the response string.
++    pub async fn call(&self, request: &str) -> std::result::Result<String, String> {
++        self.0
++            .raw_json_request(request, 1)
++            .await
++            .map(|(response, _)| response.result)
++            .map_err(|e| e.to_string())
++    }
++}
++
++pub fn methods_handle<N: NetworkSpec>(client: Arc<dyn HeliosApi<N>>) -> Result<MethodsHandle> {
++    Ok(MethodsHandle(Arc::new(methods(client)?)))
+ }
+ 
+ #[derive(Clone)]
+diff --git a/ethereum/Cargo.toml b/ethereum/Cargo.toml
+index b5a53f6..08215f4 100644
+--- a/ethereum/Cargo.toml
++++ b/ethereum/Cargo.toml
+@@ -47,7 +47,6 @@ wasm-bindgen-futures = "0.4.37"
+ getrandom = { version = "0.3.1", features = ["wasm_js"] }
+ 
+ [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+-openssl.workspace = true
+ dirs = "5.0.1"
+ 
+ [target.wasm32-unknown-unknown.dependencies]
+diff --git a/verifiable-api/client/src/http.rs b/verifiable-api/client/src/http.rs
+index 1a7349f..9be35f1 100644
+--- a/verifiable-api/client/src/http.rs
++++ b/verifiable-api/client/src/http.rs
+@@ -49,8 +49,8 @@ impl<N: NetworkSpec> VerifiableApi<N> for HttpVerifiableApi<N> {
+             .tcp_nodelay(true)
+             // Fast decompression
+             .brotli(true)
+-            // Faster DNS resolution
+-            .hickory_dns(true)
++            // System resolver (getaddrinfo): hickory-dns needs /etc/resolv.conf,
++            // which Android does not have.
+             // Use http2
+             .http2_prior_knowledge();
+ 

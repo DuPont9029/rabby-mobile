@@ -11,6 +11,11 @@
  */
 import { ethers } from 'ethers';
 
+import {
+  HELIOS_SYNC_WAIT_MS,
+  heliosRpc,
+  isHeliosSupported,
+} from '@/core/helios/node';
 import { customRPCServiceApi } from '@/core/serviceApi/customRPC';
 import {
   inlineSvgFromMetadata,
@@ -83,15 +88,27 @@ const encodeTokenId = (tokenId: string) =>
     .encode(['uint256'], [ethers.BigNumber.from(tokenId)])
     .slice(2);
 
+/**
+ * Ethereum mainnet reads go through the in-process Helios light client, so
+ * the token URI is verified against the chain's state root instead of
+ * trusting an RPC. Other chains (and platforms without Helios) use the
+ * default RPC.
+ */
+const usesHelios = (chain: string) => chain === 'eth' && isHeliosSupported();
+
 const ethCall = (chain: string, to: string, data: string) =>
   withCallSlot(async () => {
     const result: unknown = await withTimeout(
-      customRPCServiceApi.defaultEthRPC({
-        chainServerId: chain,
-        method: 'eth_call',
-        params: [{ to, data }, 'latest'],
-      }),
-      ETH_CALL_TIMEOUT_MS,
+      usesHelios(chain)
+        ? heliosRpc<string>('eth_call', [{ to, data }, 'latest'])
+        : customRPCServiceApi.defaultEthRPC({
+            chainServerId: chain,
+            method: 'eth_call',
+            params: [{ to, data }, 'latest'],
+          }),
+      usesHelios(chain)
+        ? HELIOS_SYNC_WAIT_MS + ETH_CALL_TIMEOUT_MS
+        : ETH_CALL_TIMEOUT_MS,
     );
     return typeof result === 'string' && /^0x[0-9a-fA-F]*$/.test(result)
       ? result

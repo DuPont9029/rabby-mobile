@@ -66,6 +66,12 @@ jobs:
           cargo --version
           cargo test --release
 
+      - name: Test Helios light-client bridge
+        working-directory: packages/react-native-fs/rust/helios-node
+        run: |
+          ./scripts/fetch-helios.sh
+          cargo test --release --locked --lib
+
       - name: Install JS dependencies
         run: |
           corepack enable

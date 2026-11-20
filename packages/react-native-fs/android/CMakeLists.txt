@@ -11,6 +11,7 @@ add_library(
   src/main/cpp/cpp-adapter.cpp
   ../cpp/RabbyNativeFS.cpp
   ../cpp/RabbySafeMedia.cpp
+  ../cpp/RabbyHelios.cpp
 )
 
 find_program(BASH_EXECUTABLE bash REQUIRED)
@@ -53,10 +54,43 @@ set_target_properties(
 )
 add_dependencies(${PACKAGE_NAME} rabby_safe_svg_build)
 
+# a16z Helios light client: a separate shared library (its own Rust std,
+# exports only the C API in rabby_helios.h).
+set(HELIOS_CRATE_DIR "${CMAKE_CURRENT_LIST_DIR}/../rust/helios-node")
+set(HELIOS_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/helios/${ANDROID_ABI}/librabby_helios_node.so")
+add_custom_command(
+  OUTPUT "${HELIOS_LIBRARY}"
+  COMMAND
+    ${CMAKE_COMMAND} -E env "CARGO=${CARGO_EXECUTABLE}"
+    "${BASH_EXECUTABLE}"
+    "${HELIOS_CRATE_DIR}/scripts/build-rust.sh"
+    "${ANDROID_ABI}"
+    "${HELIOS_LIBRARY}"
+    "${ANDROID_TOOLCHAIN_ROOT}/bin"
+    "${ANDROID_PLATFORM_LEVEL}"
+  DEPENDS
+    "${HELIOS_CRATE_DIR}/Cargo.toml"
+    "${HELIOS_CRATE_DIR}/Cargo.lock"
+    "${HELIOS_CRATE_DIR}/src/lib.rs"
+    "${HELIOS_CRATE_DIR}/patches/helios.patch"
+    "${HELIOS_CRATE_DIR}/include/rabby_helios.h"
+    "${HELIOS_CRATE_DIR}/scripts/build-rust.sh"
+    "${HELIOS_CRATE_DIR}/scripts/fetch-helios.sh"
+  VERBATIM
+)
+add_custom_target(rabby_helios_build DEPENDS "${HELIOS_LIBRARY}")
+add_library(rabby_helios_node SHARED IMPORTED GLOBAL)
+set_target_properties(
+  rabby_helios_node
+  PROPERTIES IMPORTED_LOCATION "${HELIOS_LIBRARY}"
+)
+add_dependencies(${PACKAGE_NAME} rabby_helios_build)
+
 include_directories(
   src/main/cpp
   ../cpp
   ../rust/safe-svg/include
+  ../rust/helios-node/include
 )
 
 find_library(LOG_LIB log)
@@ -69,6 +103,7 @@ target_link_libraries(
   ${LOG_LIB}
   android
   rabby_safe_svg
+  rabby_helios_node
   fbjni::fbjni
   ReactAndroid::jsi
 )

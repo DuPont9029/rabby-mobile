@@ -285,6 +285,20 @@ export function resolveSvgData(options: {
   variant?: SafeSvgVariant;
 }): Promise<SafeSvgResult>;
 export function clearSafeSvgCache(): Promise<void>;
+export type HeliosStatus = {
+  state: 'stopped' | 'syncing' | 'synced' | 'failed' | 'unavailable';
+  error: string | null;
+};
+export function isHeliosAvailable(): boolean;
+export function heliosDataDirectory(): string | null;
+export function heliosStart(config: {
+  executionRpcs: string[];
+  consensusRpcs: string[];
+  dataDir: string;
+}): number;
+export function heliosStop(): void;
+export function heliosStatus(): HeliosStatus;
+export function heliosRequest(requestJson: string): Promise<string>;
 export function readFileBytes(filepath: string): Uint8Array;
 export function readBytes(
   filepath: string,

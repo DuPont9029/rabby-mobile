@@ -1,4 +1,7 @@
 #include "RabbyNativeFS.h"
+#ifdef __ANDROID__
+#include "RabbyHelios.h"
+#endif
 
 #include <algorithm>
 #include <cerrno>
@@ -2287,6 +2290,9 @@ void install(
             return jsi::Value(access(path.c_str(), F_OK) == 0);
           }));
 
+#ifdef __ANDROID__
+  installHelios(runtime, fs, jsCallInvoker, cacheDirectory);
+#endif
   installSafeMedia(
       runtime,
       fs,

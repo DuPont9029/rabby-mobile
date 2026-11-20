@@ -538,6 +538,61 @@ var RNFS = {
     return nativeFS.resolveSvgData(options);
   },
 
+  // a16z Helios light client (Android). Verified JSON-RPC, in process.
+  isHeliosAvailable(): boolean {
+    return (
+      installNativeFS() &&
+      typeof global.__RabbyNativeFS?.heliosRequest === 'function'
+    );
+  },
+
+  heliosDataDirectory(): string | null {
+    return installNativeFS()
+      ? global.__RabbyNativeFS?.heliosDataDirectory || null
+      : null;
+  },
+
+  heliosStart(config: {
+    executionRpcs: Array<string>,
+    consensusRpcs: Array<string>,
+    dataDir: string,
+  }): number {
+    const nativeFS = getNativeFS();
+    if (typeof nativeFS.heliosStart !== 'function') {
+      return -1;
+    }
+    return nativeFS.heliosStart(JSON.stringify(config));
+  },
+
+  heliosStop(): void {
+    if (installNativeFS()) {
+      global.__RabbyNativeFS?.heliosStop?.();
+    }
+  },
+
+  heliosStatus(): {
+    state: 'stopped' | 'syncing' | 'synced' | 'failed' | 'unavailable',
+    error: ?string,
+  } {
+    if (!installNativeFS() || !global.__RabbyNativeFS?.heliosStatus) {
+      return { state: 'unavailable', error: null };
+    }
+    try {
+      return JSON.parse(global.__RabbyNativeFS.heliosStatus());
+    } catch (e) {
+      return { state: 'failed', error: 'invalid status' };
+    }
+  },
+
+  // Resolves with the raw JSON-RPC response string.
+  heliosRequest(requestJson: string): Promise<string> {
+    const nativeFS = getNativeFS();
+    if (typeof nativeFS.heliosRequest !== 'function') {
+      return Promise.reject(new Error('helios unavailable'));
+    }
+    return nativeFS.heliosRequest(requestJson);
+  },
+
   clearSafeSvgCache(): Promise<void> {
     if (!installNativeFS()) {
       return Promise.resolve();
