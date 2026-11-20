@@ -1,7 +1,9 @@
 name: Signed APK build (safe-svg font-face fix)
 
-# Signed release-like (regression) APK for the fork. Not meant for upstream.
-# Package: com.debank.rabbymobile.regression, so it installs next to the official app.
+# Signed APK for the fork, with production runtime, name and icon. Not meant for upstream.
+# It is built from the `regression` build type only to keep the package
+# com.debank.rabbymobile.regression. A different signing key can never update
+# the official com.debank.rabbymobile, so this installs next to the official app.
 on:
   push:
     branches:
@@ -23,7 +25,8 @@ jobs:
       run:
         shell: bash
     env:
-      RABBY_MOBILE_BUILD_ENV: regression
+      RABBY_MOBILE_BUILD_ENV: production
+      buildchannel: selfhost
       SENTRY_DISABLE_AUTO_UPLOAD: 'true'
     steps:
       - name: Free disk space
@@ -83,6 +86,16 @@ jobs:
           sh ./scripts/fns.sh reset_builtin_assets
           yarn buildworker:prod:android
 
+      - name: Use the production name, icon and manifest
+        working-directory: apps/mobile/android/app/src/regression
+        run: |
+          # Drop the "Reg Rabby Wallet" name/icon overlay and the regression
+          # deep-link manifest so the main (production) resources apply.
+          # google-services.json stays: it must match the .regression package.
+          rm -rf res
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' \
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android" />' > AndroidManifest.xml
+
       - name: Assemble signed regression APK (arm64-v8a)
         working-directory: apps/mobile/android
         env:
@@ -105,7 +118,7 @@ jobs:
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
           "$apksigner" verify --print-certs "$src" | tee signer.txt
           grep -q "certificate SHA-256 digest: 61b3b565e8959354a57dff200100f2458c39dbf76f73b30eb08499624dab6cc3" signer.txt
-          out="rabby-mobile-safe-svg-fontface-${GITHUB_SHA::7}-arm64-signed.apk"
+          out="rabby-wallet-fork-svgfix-${GITHUB_SHA::7}-arm64.apk"
           cp "$src" "$out"
           ls -lh "$out"
           echo "path=$out" >> "$GITHUB_OUTPUT"
@@ -119,8 +132,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="apk-signed-${GITHUB_SHA::7}"
+          tag="apk-prod-${GITHUB_SHA::7}"
           gh release create "$tag" "${{ steps.apk.outputs.path }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
-            --title "Signed APK: safe-svg @font-face fix (${GITHUB_SHA::7})" \
-            --notes "Release-like (regression) APK, arm64-v8a, built from branch apk-build with the fix from fix/safe-svg-strip-font-face. Signed with the fork owner's own key. Package com.debank.rabbymobile.regression: it installs next to the official Rabby app. Unofficial build: no Play Store auto-updates."
+            --title "Rabby Wallet (fork, production config) + SVG font fix (${GITHUB_SHA::7})" \
+            --notes "Production runtime, name and icon, arm64-v8a, with the fix from fix/safe-svg-strip-font-face. Signed with the fork owner's key. Package com.debank.rabbymobile.regression: installs next to the official app (it cannot update it). Unofficial build: no auto-updates."
