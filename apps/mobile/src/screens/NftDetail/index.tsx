@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Dimensions, StyleSheet, View, ScrollView } from 'react-native';
 import BigNumber from 'bignumber.js';
@@ -8,6 +8,7 @@ import { useTheme2024 } from '@/hooks/theme';
 import { Text } from '@/components';
 import type { NFTItem, TokenItem } from '@rabby-wallet/rabby-api/dist/types';
 import { Media } from '@/components/Media';
+import { NftImageViewer } from '@/components/NftImageViewer';
 import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT, IconNumberNFT } from '@/assets/icons/nft';
 import { CHAINS_ENUM } from '@/constant/chains';
@@ -298,6 +299,9 @@ export const NFTDetailScreen = () => {
     [styles.accountBox, styles.relative, styles.titleText, styles.walletIcon],
   );
 
+  const [viewerNft, setViewerNft] = useState<NFTItem | null>(null);
+  const closeViewer = useCallback(() => setViewerNft(null), []);
+
   const renderSingeleNft = useCallback(
     ({
       address,
@@ -324,6 +328,11 @@ export const NFTDetailScreen = () => {
               src={iToken?.content}
               onchainNft={toOnchainNftRef(iToken)}
               safeSvgVariant="detail"
+              // Show the whole artwork; tap to open it full screen.
+              resizeMode="contain"
+              onPress={
+                isImageContent(iToken) ? () => setViewerNft(iToken) : undefined
+              }
               style={styles.images}
               mediaStyle={styles.innerImages}
               playable={true}
@@ -426,9 +435,15 @@ export const NFTDetailScreen = () => {
           />
         </View>
       ) : null}
+      <NftImageViewer nft={viewerNft} onClose={closeViewer} />
     </NormalScreenContainer2024>
   );
 };
+
+const isImageContent = (nft?: NFTItem) =>
+  !nft?.content_type ||
+  nft.content_type === 'image' ||
+  nft.content_type === 'image_url';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 

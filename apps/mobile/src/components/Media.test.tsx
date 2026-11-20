@@ -428,6 +428,22 @@ describe('Media inline and on-chain artwork fallback', () => {
     expect(view.queryByTestId('media-image')).toBeNull();
   });
 
+  it('opens inline artwork on press once it is shown', async () => {
+    jest.mocked(loadOnchainNftSvg).mockResolvedValue(INLINE_SVG);
+    const onPress = jest.fn();
+    const view = render(
+      <Media
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        onPress={onPress}
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    fireEvent.press(await view.findByTestId('media-image'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it('does not try any fallback for remote media without an on-chain reference', () => {
     const view = render(
       <Media

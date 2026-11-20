@@ -1,5 +1,11 @@
 import React, { ReactNode, useEffect, useState } from 'react';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import {
+  StyleProp,
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
+  ViewStyle,
+} from 'react-native';
 import FastImage, { FastImageProps, ImageStyle } from 'react-native-fast-image';
 import RNFS, { type SafeSvgVariant } from '@rabby-wallet/react-native-fs';
 
@@ -31,6 +37,7 @@ export const MediaInlineFallback = ({
   resizeMode,
   failedPlaceholder,
   onReady,
+  onPress,
 }: {
   src?: string;
   thumbnail?: string;
@@ -41,6 +48,8 @@ export const MediaInlineFallback = ({
   resizeMode?: FastImageProps['resizeMode'];
   failedPlaceholder?: ReactNode;
   onReady?: () => void;
+  /** Only wired once artwork is shown, like the regular `Media` path. */
+  onPress?: TouchableOpacityProps['onPress'];
 }) => {
   const [state, setState] = useState<FallbackState>({ status: 'pending' });
   const chain = onchainNft?.chain;
@@ -85,14 +94,19 @@ export const MediaInlineFallback = ({
   if (state.status !== 'ready') {
     return <View style={containerStyle}>{failedPlaceholder}</View>;
   }
-  return (
-    <View style={containerStyle}>
-      <FastImage
-        source={{ uri: state.uri }}
-        style={mediaStyle}
-        resizeMode={resizeMode}
-        onLoad={onReady}
-      />
-    </View>
+  const image = (
+    <FastImage
+      source={{ uri: state.uri }}
+      style={mediaStyle}
+      resizeMode={resizeMode}
+      onLoad={onReady}
+    />
+  );
+  return onPress ? (
+    <TouchableOpacity style={containerStyle} onPress={onPress}>
+      {image}
+    </TouchableOpacity>
+  ) : (
+    <View style={containerStyle}>{image}</View>
   );
 };

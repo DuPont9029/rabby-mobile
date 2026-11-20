@@ -288,6 +288,7 @@ export const Media = ({
           resizeMode={resizeMode}
           failedPlaceholder={failedPlaceholder}
           onReady={handleSuccess}
+          onPress={onPress}
         />
       );
     }
