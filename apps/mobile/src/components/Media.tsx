@@ -86,7 +86,7 @@ type SafeSvgState =
 const SAFE_SVG_SKELETON_TIMEOUT_MS = 1500;
 
 export const Media = ({
-  type = MEDIA_TYPE.IMAGE_URL,
+  type: typeProp,
   src,
   poster,
   failedPlaceholder,
@@ -105,6 +105,9 @@ export const Media = ({
 }: MediaProps &
   Pick<TouchableOpacityProps, 'onPress'> &
   Pick<FastImageProps, 'resizeMode'>) => {
+  // Indexers send `content_type: null` for NFTs they could not read (e.g.
+  // fully on-chain ones); a default parameter only covers `undefined`.
+  const type = typeProp ?? MEDIA_TYPE.IMAGE_URL;
   const colors = useThemeColors();
   const styles = useMemo(() => getStyle(colors), [colors]);
   // const isFocused = useIsFocused();
