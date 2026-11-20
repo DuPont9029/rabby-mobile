@@ -33,7 +33,7 @@
     "authentication": {
       "auth_prompt_cancel": "Abbrechen",
       "auth_prompt_title": "Authentifizierung erforderlich",
-      "auth_prompt_desc": "Bitte authentifizieren Sie sich, um Rabby zu benutzen."
+      "auth_prompt_desc": "Bitte authentifizieren Sie sich, um Helios zu benutzen."
     },
     "biometrics": {
       "enable_fingerprint": "Mit Fingerabdruck entsperren?",
@@ -54,7 +54,7 @@
     "nonce": "Nonce",
     "cancel": "Abbrechen",
     "pin": "Anheften",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "ok": "OK",
     "cancelButton": "Abbrechen",
     "Nonce": "Nonce",
@@ -274,7 +274,7 @@
       "switchArea": {
         "skipText": "Dieses Pop-up 1 Tag lang nicht anzeigen"
       },
-      "alertText": "Drittanbieter-DApp: Wenden Sie sich bei Nutzungsproblemen bitte an den DApp-Support. Rabby bietet nur Anzeigezugriff.",
+      "alertText": "Drittanbieter-DApp: Wenden Sie sich bei Nutzungsproblemen bitte an den DApp-Support. Helios bietet nur Anzeigezugriff.",
       "title": "Screenshot zur Fehlermeldung",
       "submitFailed": "Fehler beim Einreichen.",
       "includeAddress": "Adresse zur Fehlerbehebung teilen"
@@ -395,7 +395,7 @@
       "alreadyHaveAddress": "Ich habe bereits eine Wallet",
       "createNewAddress": "Neue Wallet erstellen",
       "alreadyUseRabby": "Ich verwende bereits Rabby.",
-      "welcomeTitle": "Willkommen bei\nRabby Wallet"
+      "welcomeTitle": "Willkommen bei\nHelios Wallet"
     },
     "importSuccess": {
       "success": "{{type}} erfolgreich!",
@@ -1057,7 +1057,7 @@
       "quickAddressTitle_one": "{{count}} Adresse",
       "quickAddressTitle_other": "{{count}} Adressen",
       "add-address": "Wallet hinzufügen",
-      "delete-checklist-1": "Ich verstehe, dass beim Löschen dieser Wallet auch der zugehörige private Schlüssel und die Seed-Phrase gelöscht werden und Rabby sie NICHT wiederherstellen kann.",
+      "delete-checklist-1": "Ich verstehe, dass beim Löschen dieser Wallet auch der zugehörige private Schlüssel und die Seed-Phrase gelöscht werden und Helios sie NICHT wiederherstellen kann.",
       "delete-private-key-title": "Wallet und privaten Schlüssel löschen",
       "delete-seed-phrase-title": "Wallet und Seed-Phrase löschen",
       "delete-title": "Wallet löschen",
@@ -1228,7 +1228,7 @@
         "createAddress": "Wallet erstellen",
         "selectAddMethod": "Methode zum Hinzufügen auswählen",
         "seedPhraseOrPrivateKey": "Seed-Phrase oder privater Schlüssel",
-        "restoreRabbyWallet": "Rabby Wallet wiederherstellen",
+        "restoreRabbyWallet": "Helios Wallet wiederherstellen",
         "moreOptions": "Weitere Optionen"
       },
       "createNewAddress": {
@@ -1257,10 +1257,10 @@
         "seedPhrase": "Seed-Phrase importieren",
         "hardWare": "Hardware-Wallets verbinden",
         "tips": {
-          "title": "Ist es sicher, in Rabby zu importieren?",
-          "entry": "Ist es sicher, in Rabby zu importieren?",
+          "title": "Ist es sicher, in Helios zu importieren?",
+          "entry": "Ist es sicher, in Helios zu importieren?",
           "gotIt": "Verstanden",
-          "description": "Ihre Daten werden sicher verschlüsselt und lokal auf Ihrem Gerät gespeichert. Rabby hat keinen Zugriff auf Ihre privaten Informationen, und diese werden niemals an Dritte weitergegeben."
+          "description": "Ihre Daten werden sicher verschlüsselt und lokal auf Ihrem Gerät gespeichert. Helios hat keinen Zugriff auf Ihre privaten Informationen, und diese werden niemals an Dritte weitergegeben."
         },
         "watch": "Watch-Only-Wallet",
         "importTitle": "Wallet importieren",
@@ -1326,7 +1326,7 @@
         "enableWhitelist": "Zulassungsliste aktivieren",
         "cancel": "Abbrechen",
         "disableWhitelistTip": "Sie können Vermögenswerte an jede Adresse senden, sobald sie deaktiviert ist.",
-        "enableWhitelistTip": "Sobald aktiviert, können Sie nur Vermögenswerte an die Adressen in der Zulassungsliste mit Rabby senden."
+        "enableWhitelistTip": "Sobald aktiviert, können Sie nur Vermögenswerte an die Adressen in der Zulassungsliste mit Helios senden."
       },
       "assets": {
         "comingSoon": "Demnächst..."
@@ -1368,7 +1368,7 @@
       "unknownResult": "Unbekanntes Ergebnis, da die Sicherheits-Engine derzeit nicht verfügbar ist."
     },
     "ethSign": {
-      "alert": "Das Signieren mit 'eth_sign' kann zu einem Verlust von Vermögenswerten führen. Zu Ihrer Sicherheit unterstützt Rabby diese Methode nicht."
+      "alert": "Das Signieren mit 'eth_sign' kann zu einem Verlust von Vermögenswerten führen. Zu Ihrer Sicherheit unterstützt Helios diese Methode nicht."
     },
     "unlock": {
       "biometrics": {
@@ -1377,7 +1377,7 @@
         "enableBiometricAlert": {
           "title": "Aktivieren Sie {{ bioType }}",
           "no": "Abbrechen",
-          "content": "Möchten Sie {{ bioType }} aktivieren, um Rabby Wallet zu entsperren?",
+          "content": "Möchten Sie {{ bioType }} aktivieren, um Helios Wallet zu entsperren?",
           "yes": "Ja"
         }
       },
@@ -1407,12 +1407,12 @@
         "description2": "Wenn Sie Ihre Seed-Phrase verlieren, können Sie Ihre Wallet nicht wiederherstellen.",
         "description3": "Teilen Sie niemals Ihre Seed-Phrase—jeder, der darauf Zugriff hat, kann Ihre Gelder kontrollieren.",
         "title1": "Sicherung",
-        "description4": "Ihre Seed-Phrase wird lokal auf Ihrem Gerät gespeichert und mit Ihrem Passwort verschlüsselt. Nur Sie haben Zugriff darauf. Rabby kann Ihre Seed-Phrase weder abrufen noch darauf zugreifen.",
+        "description4": "Ihre Seed-Phrase wird lokal auf Ihrem Gerät gespeichert und mit Ihrem Passwort verschlüsselt. Nur Sie haben Zugriff darauf. Helios kann Ihre Seed-Phrase weder abrufen noch darauf zugreifen.",
         "description1": "Eine Seed-Phrase ist eine Reihe von Wörtern, mit der Sie auf Ihre Wallet zugreifen und sie kontrollieren können. Damit können Sie Ihre Wallet auf jedem Gerät wiederherstellen."
       },
       "privateKey": {
         "isItSafeToImportItInRabby": {
-          "question": "Ist es sicher, es in Rabby zu importieren?",
+          "question": "Ist es sicher, es in Helios zu importieren?",
           "answer": "Ja, es wird lokal auf Ihrem Telefon gespeichert und ist nur für Sie zugänglich."
         },
         "whatIsAPrivateKey": {
@@ -1496,13 +1496,13 @@
       },
       "seedPhrase": {
         "showSeedPhrase": "Seed-Phrase anzeigen",
-        "importQuestion2": "Die Seed-Phrase wird nur auf meinem Telefon gespeichert und Rabby hat keinen Zugriff darauf.",
+        "importQuestion2": "Die Seed-Phrase wird nur auf meinem Telefon gespeichert und Helios hat keinen Zugriff darauf.",
         "whatIsASeedPhrase": {
           "question": "Was ist eine Seed-Phrase?",
           "answer": "Eine Phrase aus 12, 18 oder 24 Wörtern, mit der Sie Ihre Assets kontrollieren."
         },
         "riskTips": "Bevor Sie beginnen, lesen Sie bitte die folgenden Sicherheitstipps und behalten Sie sie im Hinterkopf.",
-        "importQuestion3": "Wenn ich die Seed-Phrase nicht sichere und die App versehentlich gelöscht wird, das Gerät verloren geht oder eine Neuinstallation erforderlich ist, kann Rabby sie nicht für mich wiederherstellen.",
+        "importQuestion3": "Wenn ich die Seed-Phrase nicht sichere und die App versehentlich gelöscht wird, das Gerät verloren geht oder eine Neuinstallation erforderlich ist, kann Helios sie nicht für mich wiederherstellen.",
         "googleDriveBackup": "Google-Drive-Backup",
         "backupSuccessGDrive": "Auf Google Drive gesichert",
         "backupFailedButton": "Erneut versuchen",
@@ -1529,13 +1529,13 @@
         "backupRestoreEmpty": "Keine Sicherungs-Seed-Phrase gefunden",
         "backupRestoreUnlockTitle": "Backup-Passwort eingeben",
         "backupRestoreDownloadTitle": "Seed-Phrase wird importiert...",
-        "backupUnlockDesc": "Bewahren Sie Ihr Passwort sicher auf, um Backups wiederherzustellen. Rabby Wallet speichert es nicht und kann es nicht wiederherstellen.",
+        "backupUnlockDesc": "Bewahren Sie Ihr Passwort sicher auf, um Backups wiederherzustellen. Helios Wallet speichert es nicht und kann es nicht wiederherstellen.",
         "backupRestoreTitle": "Gefundene Seed-Phrases: {{count}}",
         "createdSuccess": "Ihre Seed-Phrase wurde erstellt",
         "backupTips": "Stellen Sie sicher, dass niemand sonst Ihren Bildschirm beobachtet, wenn Sie die Seed-Phrase sichern.",
         "importQuestion1": "Wenn ich meine Seed-Phrase verliere oder sie mit anderen teile, sind meine Vermögenswerte für immer verloren.",
         "isItSafeToImportItInRabby": {
-          "question": "Ist es sicher, es in Rabby zu importieren?",
+          "question": "Ist es sicher, es in Helios zu importieren?",
           "answer": "Ja, es wird lokal auf Ihrem Telefon gespeichert und ist nur für Sie zugänglich."
         },
         "addMoreWalletTitle": "Weitere Wallets\naus dieser Seed-Phrase hinzufügen"
@@ -1604,7 +1604,7 @@
         "title3": "Nie teilen",
         "description2": "Wenn Sie Ihren privaten Schlüssel verlieren, können Sie Ihre Wallet nicht wiederherstellen.",
         "title4": "Sicherheit",
-        "description4": "Ihr privater Schlüssel wird lokal auf Ihrem Gerät gespeichert und mit Ihrem Passwort verschlüsselt. Nur Sie können darauf zugreifen. Rabby kann Ihren privaten Schlüssel nicht abrufen oder darauf zugreifen.",
+        "description4": "Ihr privater Schlüssel wird lokal auf Ihrem Gerät gespeichert und mit Ihrem Passwort verschlüsselt. Nur Sie können darauf zugreifen. Helios kann Ihren privaten Schlüssel nicht abrufen oder darauf zugreifen.",
         "description1": "Ein privater Schlüssel ist eine Zeichenfolge aus Buchstaben und Zahlen, die verwendet wird, um auf Ihr Wallet zuzugreifen und es zu steuern. Sie können ihn verwenden, um Ihr Wallet auf einem beliebigen Gerät wiederherzustellen.",
         "description3": "Teilen Sie niemals Ihren privaten Schlüssel – jeder, der Zugriff darauf hat, kann Ihre Mittel kontrollieren."
       },
@@ -1662,7 +1662,7 @@
       "verify-face-id-before-backup": "Überprüfen Sie Ihre Face ID vor der Sicherung",
       "verify-face-id": "Gesichtserkennung überprüfen",
       "verify-fingerprint": "Fingerabdruck verifizieren",
-      "verify-password-before-backup": "Überprüfen Sie Ihr Rabby-Passwort vor der Sicherung",
+      "verify-password-before-backup": "Überprüfen Sie Ihr Helios-Passwort vor der Sicherung",
       "verify-and-backup": "Überprüfen & sichern",
       "verify-fingerprint-before-backup": "Überprüfen Sie Ihren Fingerabdruck vor dem Backup"
     },
@@ -1672,7 +1672,7 @@
       "tokenSupported": "Token wird auf Rabby unterstützt.",
       "tokenNotFound": "Token von dieser Vertragsadresse nicht gefunden",
       "tokenCustomized": "Der aktuelle Token wurde bereits als benutzerdefinierter Token hinzugefügt",
-      "title": "Benutzerdefinierten Token zu Rabby hinzufügen"
+      "title": "Benutzerdefinierten Token zu Helios hinzufügen"
     },
     "customRpc": {
       "EditCustomTestnetModal": {
@@ -1748,7 +1748,7 @@
       "setUpSuccess": "Passwort erfolgreich eingerichtet",
       "enable": "Aktivieren Sie {{ bioType }}",
       "agree": "Ich habe die <1/><2>Nutzungsbedingungen</2> gelesen und stimme diesen zu.",
-      "confirmModalDesc": "Bitte bewahren Sie Ihr Passwort ordnungsgemäß auf. Einmal verloren, kann es von Rabby weder geändert noch wiederhergestellt werden.",
+      "confirmModalDesc": "Bitte bewahren Sie Ihr Passwort ordnungsgemäß auf. Einmal verloren, kann es von Helios weder geändert noch wiederhergestellt werden.",
       "setWallet": "Wallet einrichten",
       "subTitle": "Dieses Passwort entsperrt Ihre Wallet und verschlüsselt Ihre Daten auf diesem Gerät. Es kann nicht wiederhergestellt werden. Wenn Sie es verlieren, müssen Sie die Wallet zurücksetzen und erneut importieren.",
       "dataAnalysisDesc": "Teilen Sie anonyme Nutzungsdaten, um Rabby zu verbessern. Die erfassten Daten werden weder mit Ihnen noch mit Ihrem Konto verknüpft. Sie können dies jederzeit in den Einstellungen ändern.",
@@ -1830,8 +1830,8 @@
       "title": "Genehmigungen"
     },
     "addChain": {
-      "title": "Benutzerdefiniertes Netzwerk zu Rabby hinzufügen",
-      "desc": "Rabby kann die Sicherheit benutzerdefinierter Netzwerke nicht verifizieren. Bitte fügen Sie nur vertrauenswürdige Netzwerke hinzu."
+      "title": "Benutzerdefiniertes Netzwerk zu Helios hinzufügen",
+      "desc": "Helios kann die Sicherheit benutzerdefinierter Netzwerke nicht verifizieren. Bitte fügen Sie nur vertrauenswürdige Netzwerke hinzu."
     },
     "gasAccount": {
       "deposit": "Einzahlung",
@@ -2076,7 +2076,7 @@
       "themeMode": "Designmodus",
       "clearPending": "Ausstehende Transaktionen lokal entfernen",
       "addCustomNetwork": "Benutzerdefiniertes Netzwerk hinzufügen",
-      "clearPendingDesc1": "Dadurch werden alle Ihre ausstehenden Transaktionen gelöscht. Dies kann Ihnen helfen, das Problem zu lösen, dass in einigen Fällen der Zustand der Transaktion in Rabby nicht mit dem Zustand on-chain übereinstimmt.",
+      "clearPendingDesc1": "Dadurch werden alle Ihre ausstehenden Transaktionen gelöscht. Dies kann Ihnen helfen, das Problem zu lösen, dass in einigen Fällen der Zustand der Transaktion in Helios nicht mit dem Zustand on-chain übereinstimmt.",
       "clearPendingDesc2": "Dadurch werden die Kontosalden nicht geändert oder Sie müssen Ihre Seed-Phrase nicht erneut eingeben. Alle Ihre Vermögenswerte und Kontoinformationen bleiben sicher.",
       "autoLockTime": "Automatische Sperrzeit",
       "appLaunchLock": "Sperre beim Start",
@@ -2117,7 +2117,7 @@
       "add": "Benutzerdefiniertes Netzwerk hinzufügen",
       "empty": "Kein benutzerdefiniertes Netzwerk",
       "id": "ID",
-      "desc": "Rabby kann die Sicherheit benutzerdefinierter Netzwerke nicht überprüfen. Bitte fügen Sie nur vertrauenswürdige Netzwerke hinzu.",
+      "desc": "Helios kann die Sicherheit benutzerdefinierter Netzwerke nicht überprüfen. Bitte fügen Sie nur vertrauenswürdige Netzwerke hinzu.",
       "CustomTestnetForm": {
         "name": "Netzwerkname",
         "id": "Netzwerk-ID",
@@ -2239,11 +2239,11 @@
       "syncingProgress": "Scannen ({{ percent }})",
       "importedSuccessfully": "Erfolgreich importiert!",
       "scanTips1": "Klicken Sie auf „Mobile Sync“ in der Rabby-Erweiterung",
-      "imported": "Adressen, die bereits in Rabby Mobile vorhanden sind, werden nicht erneut importiert. Adressnotizen und Zulassungslisten werden automatisch synchronisiert.",
+      "imported": "Adressen, die bereits in Helios Mobile vorhanden sind, werden nicht erneut importiert. Adressnotizen und Zulassungslisten werden automatisch synchronisiert.",
       "verifyTips": "Ihre Daten werden offline verschlüsselt. Geben Sie Ihr Rabby Extension-Passwort ein, um zu entschlüsseln und zu verifizieren.",
       "importedTips": "Wenn die App bereits dieselbe Adresse enthält, wird sie nicht importiert. Adressnotizen und Zulassungslisten werden ebenfalls synchronisiert.",
       "verifyWithPassword": "Mit Ihrem \nRabby-Extension-Passwort bestätigen",
-      "newUserVerify": "Es wird auch als Standardpasswort für Ihr Rabby Mobile dienen.",
+      "newUserVerify": "Es wird auch als Standardpasswort für Ihr Helios Mobile dienen.",
       "noNewAddr": "Keine neuen Adressen zum Importieren gefunden",
       "syncingTips": "Halten Sie die Kamera ruhig, bis der Scan abgeschlossen ist.",
       "scanTips2": "Scannen Sie den Code und beginnen Sie mit der Synchronisierung"
@@ -2923,7 +2923,7 @@
         "sizeTips": "Der Gesamtwert oder die Menge Ihres Handels, festgelegt durch Margin und Hebel.",
         "feeHyperliquid": "Hyperliquid",
         "feeTitle": "Gebühr",
-        "feeRabby": "Rabby Wallet",
+        "feeRabby": "Helios Wallet",
         "feeDesc": "Wenn Benutzer Trades platzieren, gelten sowohl <1>Handelsgebühren</1> als auch <2>Builder-Gebühren</2>.",
         "amount": "Betrag",
         "asset": "Vermögenswert",
@@ -3568,7 +3568,7 @@
     "newUserOnboarding": {
       "restoreWallet": {
         "subtitle": "Willkommen zurück! 🎉\nWählen Sie eine Methode, um Ihre Wallet schnell wiederherzustellen.",
-        "title": "Stellen Sie Ihre Rabby Wallet wieder her",
+        "title": "Stellen Sie Ihre Helios Wallet wieder her",
         "subtitleInApp": "Wählen Sie unten eine Option, um Ihre Wallets schnell aus der Rabby-Erweiterung oder iCloud zu importieren."
       },
       "common": {
@@ -3708,7 +3708,7 @@
     },
     "walletConnect": {
       "screenTitle": "Wallet verbinden",
-      "connectingToRabby": "Verbindung zu Rabby wird hergestellt",
+      "connectingToRabby": "Verbindung zu Helios wird hergestellt",
       "pairingFailed": "WalletConnect-Kopplung fehlgeschlagen.",
       "proposalNotReceived": "Der WalletConnect-QR-Code ist möglicherweise abgelaufen. Bitte aktualisiere ihn und versuche es erneut.",
       "connected": "Erfolgreich verbunden. Bitte kehren Sie zur DApp zurück.",
@@ -3767,8 +3767,8 @@
     "permissions_alert": {
       "cancel": "Nicht erlauben",
       "open_settings": "OK",
-      "title": "\"Rabby Wallet\" möchte Bluetooth verwenden",
-      "message": "Rabby Wallet verwendet Bluetooth-Zugriff, um Ledger zu verbinden"
+      "title": "\"Helios Wallet\" möchte Bluetooth verwenden",
+      "message": "Helios Wallet verwendet Bluetooth-Zugriff, um Ledger zu verbinden"
     },
     "powered_off_alert": {
       "title": "Bluetooth ist ausgeschaltet",

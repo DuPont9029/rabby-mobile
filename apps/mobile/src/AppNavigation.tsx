@@ -620,7 +620,7 @@ export default function AppNavigation() {
                   name={RootNames.NotFound}
                   component={NotFoundScreen}
                   options={mergeScreenOptions({
-                    title: 'Rabby Wallet',
+                    title: 'Helios Wallet',
                     headerShadowVisible: false,
                     headerShown: true,
                     headerTransparent: false,

@@ -42,7 +42,7 @@
     "authentication": {
       "auth_prompt_cancel": "キャンセル",
       "auth_prompt_title": "認証が必要です",
-      "auth_prompt_desc": "Rabbyを使用するには認証してください"
+      "auth_prompt_desc": "Heliosを使用するには認証してください"
     },
     "biometrics": {
       "enable_device_passcode_ios": "デバイスのパスコードでロックを解除しますか？",
@@ -84,7 +84,7 @@
       "goToHome": "ホームに移動",
       "createNewAddress": "新しいウォレットを作成",
       "alreadyHaveAddress": "私はすでにウォレットを持っています",
-      "welcomeTitle": "Rabby Walletへ\nようこそ",
+      "welcomeTitle": "Helios Walletへ\nようこそ",
       "alreadyUseRabby": "Rabbyをすでに使っています"
     },
     "transactions": {
@@ -886,7 +886,7 @@
         "importAddress": "ウォレットをインポートする",
         "selectAddMethod": "追加方法を選択",
         "seedPhraseOrPrivateKey": "シードフレーズまたは秘密鍵",
-        "restoreRabbyWallet": "Rabbyウォレットを復元",
+        "restoreRabbyWallet": "Heliosウォレットを復元",
         "moreOptions": "その他のオプション"
       },
       "createNewAddress": {
@@ -915,9 +915,9 @@
         "hardWare": "ハードウェアウォレットを接続",
         "tips": {
           "gotIt": "了解しました",
-          "entry": "Rabby にインポートするのは安全ですか",
-          "description": "データは安全に暗号化され、端末内に保存されます。Rabbyが個人情報にアクセスしたり、第三者と共有したりすることはありません。",
-          "title": "Rabbyにインポートしても安全ですか？"
+          "entry": "Helios にインポートするのは安全ですか",
+          "description": "データは安全に暗号化され、端末内に保存されます。Heliosが個人情報にアクセスしたり、第三者と共有したりすることはありません。",
+          "title": "Heliosにインポートしても安全ですか？"
         },
         "seedPhrase": "シードフレーズをインポート",
         "watch": "ウォッチオンリーウォレット",
@@ -1070,7 +1070,7 @@
         "enableWhitelist": "ホワイトリストを有効にする",
         "cancel": "キャンセル",
         "disableWhitelist": "ホワイトリストを無効にする",
-        "enableWhitelistTip": "有効化すると、Rabbyを使用してホワイトリストのアドレスにのみ資産を送信できます。",
+        "enableWhitelistTip": "有効化すると、Heliosを使用してホワイトリストのアドレスにのみ資産を送信できます。",
         "disableWhitelistTip": "無効にすると、任意のアドレスに資産を送信できます。"
       },
       "assets": {
@@ -1118,7 +1118,7 @@
           "title": "{{ bioType }} を有効にする",
           "no": "キャンセル",
           "yes": "はい",
-          "content": "{{ bioType }}でRabby Walletのロックを解除できるようにしますか？"
+          "content": "{{ bioType }}でHelios Walletのロックを解除できるようにしますか？"
         }
       },
       "password": {
@@ -1141,7 +1141,7 @@
       "quickAddressTitle_other": "{{count}} アドレス",
       "quickAddressTitle_one": "{{count}} アドレス",
       "add-address": "ウォレットを追加",
-      "delete-checklist-1": "このウォレットを削除すると、対応する秘密鍵とシードフレーズも削除され、Rabbyでは復元できないことを理解しました。",
+      "delete-checklist-1": "このウォレットを削除すると、対応する秘密鍵とシードフレーズも削除され、Heliosでは復元できないことを理解しました。",
       "delete-private-key-title": "ウォレットと秘密鍵を削除",
       "delete-seed-phrase-title": "ウォレットとシードフレーズを削除",
       "delete-title": "ウォレットを削除",
@@ -1159,7 +1159,7 @@
       "tokenSupported": "このトークンはRabbyでサポートされています。",
       "hasAdded": "このトークンが追加されました。",
       "noTokenFound": "トークンが見つかりません",
-      "title": "Rabby にカスタムトークンを追加",
+      "title": "Helios にカスタムトークンを追加",
       "tokenNotFound": "このコントラクトアドレスからトークンが見つかりませんでした。",
       "tokenCustomized": "このトークンはカスタムトークンとして追加済みです。"
     },
@@ -1208,17 +1208,17 @@
         "title2": "絶対に共有しないでください",
         "description2": "シードフレーズを紛失すると、ウォレットを復元できなくなります。",
         "description3": "シードフレーズは絶対に共有しないでください。シードフレーズを入手した人は資金を自由に操作できます。",
-        "description4": "シードフレーズは端末内に保存され、パスワードで暗号化されます。アクセスできるのはあなただけで、Rabbyがシードフレーズを取得したりアクセスしたりすることはできません。",
+        "description4": "シードフレーズは端末内に保存され、パスワードで暗号化されます。アクセスできるのはあなただけで、Heliosがシードフレーズを取得したりアクセスしたりすることはできません。",
         "description1": "シードフレーズは、ウォレットへのアクセスと管理に使用する一連の単語です。どの端末でもウォレットを復元できます。"
       },
       "seedPhrase": {
         "isItSafeToImportItInRabby": {
           "answer": "はい。スマートフォン内に保存され、アクセスできるのはあなただけです。",
-          "question": "Rabbyにインポートしても安全ですか？"
+          "question": "Heliosにインポートしても安全ですか？"
         },
         "importQuestion1": "シードフレーズを紛失したり他人と共有したりすると、私の資産は永久に失われます。",
         "showSeedPhrase": "シードフレーズを表示",
-        "importQuestion2": "シードフレーズは私の携帯電話にのみ保存されており、Rabbyはそれにアクセスできません。",
+        "importQuestion2": "シードフレーズは私の携帯電話にのみ保存されており、Heliosはそれにアクセスできません。",
         "backupRestoreCreatedAt": "バックアップ時間：",
         "whatIsASeedPhrase": {
           "question": "シードフレーズとは何ですか？",
@@ -1247,14 +1247,14 @@
         "backupSuccessICloud": "iCloud にバックアップ済み",
         "backupRestoreImported": "インポート済み",
         "backupRestoreUnlockTitle": "バックアップパスワードを入力してください",
-        "importQuestion3": "シードフレーズをバックアップしない場合、アプリが意図せず削除されたり、デバイスが紛失したり、再インストールが必要になったりすると、Rabbyはそれを回復することができません。",
+        "importQuestion3": "シードフレーズをバックアップしない場合、アプリが意図せず削除されたり、デバイスが紛失したり、再インストールが必要になったりすると、Heliosはそれを回復することができません。",
         "backupRestoreUnlockDesc": "バックアップを暗号化するために設定したのと同じパスワードを使用してください。",
         "manuallyBackup": "手動バックアップ",
         "pastedAndClear": "貼り付けとクリップボードのクリアが完了しました。",
         "chooseBackupMethodDesc": "バックアップを使用すると、アプリを削除したりデバイスを紛失した場合にウォレットを復元できます。",
         "backupUploadToGDrive": "Google Driveにバックアップ中...",
         "backupTips": "シードフレーズをバックアップする際は、他の誰も画面を見ていないことを確認してください。",
-        "backupUnlockDesc": "バックアップを復元できるよう、パスワードは安全に保管してください。Rabby Walletでは保存も復元もできません。",
+        "backupUnlockDesc": "バックアップを復元できるよう、パスワードは安全に保管してください。Helios Walletでは保存も復元もできません。",
         "addMoreWalletTitle": "このシードフレーズから\nさらにウォレットを追加"
       },
       "privateKey": {
@@ -1264,7 +1264,7 @@
         },
         "isItSafeToImportItInRabby": {
           "answer": "はい、スマートフォン内に保存され、アクセスできるのはあなただけです。",
-          "question": "秘密鍵をRabbyにインポートしても安全ですか？"
+          "question": "秘密鍵をHeliosにインポートしても安全ですか？"
         },
         "repeatImportTips": "このウォレットはインポートされました"
       },
@@ -1406,7 +1406,7 @@
         "description1": "秘密鍵は、ウォレットへのアクセスと管理に使用する英数字の文字列です。どの端末でもウォレットを復元できます。",
         "title3": "絶対に共有しないでください",
         "description3": "秘密鍵は絶対に共有しないでください。秘密鍵を入手した人は資金を自由に操作できます。",
-        "description4": "秘密鍵は端末内に保存され、パスワードで暗号化されます。アクセスできるのはあなただけで、Rabbyが秘密鍵を取得したりアクセスしたりすることはできません。"
+        "description4": "秘密鍵は端末内に保存され、パスワードで暗号化されます。アクセスできるのはあなただけで、Heliosが秘密鍵を取得したりアクセスしたりすることはできません。"
       },
       "importing": "インポート中...",
       "Done": "完了",
@@ -1467,7 +1467,7 @@
       "verify-password": "パスワードを確認する",
       "verify-face-id": "フェイス ID を確認する",
       "verify-fingerprint-before-backup": "バックアップの前に指紋を確認してください",
-      "verify-password-before-backup": "バックアップの前にRabbyのパスワードを確認してください。"
+      "verify-password-before-backup": "バックアップの前にHeliosのパスワードを確認してください。"
     },
     "gasAccount": {
       "deposit": "入金",
@@ -1598,8 +1598,8 @@
       "alert": "この秘密鍵は資産へアクセスするための重要な情報です。紛失したり他人に開示したりすると、資産を永久に失う可能性があります。安全な環境で確認し、厳重に保管してください。"
     },
     "addChain": {
-      "title": "Rabbyにカスタムネットワークを追加",
-      "desc": "Rabbyはカスタムネットワークのセキュリティを確認できません。信頼できるネットワークのみを追加してください。"
+      "title": "Heliosにカスタムネットワークを追加",
+      "desc": "Heliosはカスタムネットワークのセキュリティを確認できません。信頼できるネットワークのみを追加してください。"
     },
     "miniSignFooterBar": {
       "status": {
@@ -1662,7 +1662,7 @@
       "gnosisChainScrollDesc": "このウォレットは{{count}}個のチェーンにデプロイされていることがわかりました"
     },
     "ethSign": {
-      "alert": "\"eth_sign\"で署名すると、資産の損失が生じる可能性があります。安全のために、Rabbyはこの方法をサポートしていません。"
+      "alert": "\"eth_sign\"で署名すると、資産の損失が生じる可能性があります。安全のために、Heliosはこの方法をサポートしていません。"
     },
     "tokenDetail": {
       "excludeBalanceTipsButton": "了解しました",
@@ -1810,7 +1810,7 @@
       "ConfirmModifyRpcModal": {
         "desc": "このチェーンは既にRabbyによって統合されています。RPC URLを変更する必要がありますか？"
       },
-      "desc": "Rabbyはカスタムネットワークのセキュリティを検証できません。信頼できるネットワークのみを追加してください。",
+      "desc": "Heliosはカスタムネットワークのセキュリティを検証できません。信頼できるネットワークのみを追加してください。",
       "id": "ID",
       "addToken": {
         "title": "カスタムネットワークトークンを追加",
@@ -1872,7 +1872,7 @@
       "passwordMin": "パスワードは8文字以上である必要があります。",
       "passwordRequired": "パスワードを入力してください",
       "passwordPlaceholder": "パスワードは8文字以上でなければなりません。",
-      "confirmModalDesc": "パスワードを適切に保管してください。一度失われた場合、Rabbyでは変更や回復ができません。",
+      "confirmModalDesc": "パスワードを適切に保管してください。一度失われた場合、Heliosでは変更や回復ができません。",
       "setWallet": "ウォレットを設定",
       "biometricsFail": "生体認証を有効にできませんでした",
       "confirmRequired": "パスワードを確認してください",
@@ -1904,7 +1904,7 @@
       "lockWallet": "ウォレットをロック",
       "faceId": "Face ID",
       "themeMode": "テーマモード",
-      "clearPendingDesc1": "これにより、すべての未処理の取引がクリアされます。これは、一部のケースでRabbyにおける取引の状態がオンチェーンの状態と一致しないという問題を解決するのに役立ちます。",
+      "clearPendingDesc1": "これにより、すべての未処理の取引がクリアされます。これは、一部のケースでHeliosにおける取引の状態がオンチェーンの状態と一致しないという問題を解決するのに役立ちます。",
       "clearPendingDesc2": "これにより、アカウントの残高が変更されたり、シードフレーズを再入力する必要が生じたりすることはありません。すべての資産とアカウント情報は安全に保たれます。",
       "appCache": "アプリのキャッシュをクリア",
       "currentLanguage": "現在の言語",
@@ -2005,8 +2005,8 @@
       "verifyWithPassword": "Rabby Extensionの\nパスワードで確認",
       "scanTips1": "Rabby Extensionで「Mobile Sync」をクリック",
       "scanTips2": "コードをスキャンして同期を開始してください。",
-      "newUserVerify": "このパスワードはRabby Mobileのデフォルトパスワードとしても使用されます。",
-      "imported": "Rabby Mobile に既にあるアドレスは再度インポートされません。アドレスノートとホワイトリストは自動的に同期されます。",
+      "newUserVerify": "このパスワードはHelios Mobileのデフォルトパスワードとしても使用されます。",
+      "imported": "Helios Mobile に既にあるアドレスは再度インポートされません。アドレスノートとホワイトリストは自動的に同期されます。",
       "syncingProgress": "スキャン中 ({{ percent }})",
       "importedSuccessfully": "インポートしました！",
       "verifyTips": "データはオフラインで暗号化されています。Rabby Extension のパスワードを入力して復号化と検証を行ってください。",
@@ -2687,7 +2687,7 @@
         "provider": "プロバイダー",
         "feeTitle": "手数料",
         "feeHyperliquid": "Hyperliquid",
-        "feeRabby": "Rabby Wallet",
+        "feeRabby": "Helios Wallet",
         "feeDesc": "取引を行う際は、\n<1>取引手数料</1>と<2>ビルダー手数料</2>が適用されます。",
         "amount": "金額",
         "asset": "資産",
@@ -3332,7 +3332,7 @@
     "newUserOnboarding": {
       "restoreWallet": {
         "subtitle": "お帰りなさい! 🎉  \nウォレットを迅速に復元する方法を選択してください。",
-        "title": "Rabby ウォレットを復元する",
+        "title": "Helios ウォレットを復元する",
         "subtitleInApp": "Rabby 拡張機能または iCloud からウォレットをすばやくインポートするには、下のオプションを選択してください。"
       },
       "common": {
@@ -3472,7 +3472,7 @@
     },
     "walletConnect": {
       "screenTitle": "ウォレットを接続",
-      "connectingToRabby": "Rabbyに接続中",
+      "connectingToRabby": "Heliosに接続中",
       "pairingFailed": "WalletConnectのペアリングに失敗しました。",
       "proposalNotReceived": "WalletConnectのQRコードが無効になっている可能性があります。更新して再試行してください。",
       "connected": "接続しました。DAppに戻ってください。",
@@ -3503,7 +3503,7 @@
     "pin": "固定",
     "nonce": "ノンス",
     "refresh": "更新",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "copied": "コピーしました",
     "backButton": "戻る",
     "proceedButton": "続行",
@@ -3602,9 +3602,9 @@
       "message": "Bluetoothをオンにしてこの機能を使用してください。"
     },
     "permissions_alert": {
-      "title": "「Rabby Wallet」にBluetoothの使用を許可しますか？",
+      "title": "「Helios Wallet」にBluetoothの使用を許可しますか？",
       "cancel": "許可しない",
-      "message": "Rabby WalletはLedgerへ接続するためにBluetoothを使用します。",
+      "message": "Helios WalletはLedgerへ接続するためにBluetoothを使用します。",
       "open_settings": "OK"
     },
     "update_firmware_alert": {
@@ -3742,7 +3742,7 @@
       "switchArea": {
         "skipText": "このポップアップを1日間表示しない"
       },
-      "alertText": "サードパーティ製DApp：利用上の問題はDAppのサポートへお問い合わせください。Rabbyは閲覧機能のみ提供します",
+      "alertText": "サードパーティ製DApp：利用上の問題はDAppのサポートへお問い合わせください。Heliosは閲覧機能のみ提供します",
       "title": "スクリーンショットでバグを報告",
       "submitFailed": "送信に失敗しました。",
       "includeAddress": "トラブルシューティングのためにアドレスを共有"

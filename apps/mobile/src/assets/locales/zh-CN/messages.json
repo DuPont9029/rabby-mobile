@@ -31,7 +31,7 @@
   },
   "native": {
     "authentication": {
-      "auth_prompt_desc": "请验证身份以使用 Rabby",
+      "auth_prompt_desc": "请验证身份以使用 Helios",
       "auth_prompt_title": "需要身份验证",
       "auth_prompt_cancel": "取消"
     },
@@ -63,7 +63,7 @@
     "Nonce": "Nonce",
     "Paste": "粘贴",
     "Cancel": "取消",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "nonce": "nonce",
     "appDescription": "您的 Ethereum 与 EVM 首选钱包",
     "next": "下一步",
@@ -235,7 +235,7 @@
       "alreadyHaveAddress": "我已有一个钱包",
       "createNewAddress": "创建新钱包",
       "alreadyUseRabby": "我已有 Rabby 钱包",
-      "welcomeTitle": "欢迎使用\nRabby 钱包"
+      "welcomeTitle": "欢迎使用\nHelios 钱包"
     },
     "importSeedPhrase": {
       "enterYourSeedPhrase": "输入您的助记词，每个单词之间用空格分隔"
@@ -825,7 +825,7 @@
       "quickAddressTitle_one": "{{count}} 地址",
       "quickAddressTitle_other": "{{count}} 个地址",
       "add-address": "添加钱包",
-      "delete-checklist-1": "我明白，删除此钱包后，对应的私钥与助记词将被永久清除，Rabby 无法恢复",
+      "delete-checklist-1": "我明白，删除此钱包后，对应的私钥与助记词将被永久清除，Helios 无法恢复",
       "delete-private-key-title": "删除钱包与私钥",
       "delete-seed-phrase-title": "删除钱包与助记词",
       "delete-title": "删除钱包"
@@ -1067,7 +1067,7 @@
         "cancel": "取消",
         "enableWhitelist": "启用白名单",
         "disableWhitelistTip": "一旦禁用，您可以将资产发送到任何地址。",
-        "enableWhitelistTip": "一旦启用，你只能使用 Rabby 将资产发送到白名单中的地址。"
+        "enableWhitelistTip": "一旦启用，你只能使用 Helios 将资产发送到白名单中的地址。"
       },
       "tokenDetail": {
         "swap": "兑换",
@@ -1119,9 +1119,9 @@
         "hardWare": "连接硬件钱包",
         "tips": {
           "gotIt": "我知道了",
-          "title": "导入到 Rabby 安全吗？",
-          "entry": "导入到 Rabby 是否安全",
-          "description": "您的数据已被安全加密并存储在您的设备本地。Rabby 无法访问您的私人信息，这些信息也不会与第三方共享。"
+          "title": "导入到 Helios 安全吗？",
+          "entry": "导入到 Helios 是否安全",
+          "description": "您的数据已被安全加密并存储在您的设备本地。Helios 无法访问您的私人信息，这些信息也不会与第三方共享。"
         },
         "importTitle": "导入钱包",
         "safeTitle": "导入 Safe 钱包",
@@ -1140,7 +1140,7 @@
         "createAddress": "创建钱包",
         "selectAddMethod": "选择添加方法",
         "seedPhraseOrPrivateKey": "助记词或私钥",
-        "restoreRabbyWallet": "恢复 Rabby 钱包",
+        "restoreRabbyWallet": "恢复 Helios 钱包",
         "moreOptions": "更多导入方式"
       },
       "rateModal": {
@@ -1220,7 +1220,7 @@
           "yes": "是",
           "title": "启用 {{ bioType }}",
           "no": "取消",
-          "content": "您是否想启用 {{ bioType }} 解锁 Rabby Wallet？"
+          "content": "您是否想启用 {{ bioType }} 解锁 Helios Wallet？"
         }
       },
       "password": {
@@ -1282,7 +1282,7 @@
       },
       "privateKey": {
         "isItSafeToImportItInRabby": {
-          "question": "在 Rabby 中导入安全吗？",
+          "question": "在 Helios 中导入安全吗？",
           "answer": "是的，它会在您的手机本地存储，只有您可以访问。"
         },
         "whatIsAPrivateKey": {
@@ -1306,7 +1306,7 @@
         "GotIt": "知道了",
         "title1": "备份",
         "title3": "安全性",
-        "description4": "您的助记词存储在您的设备上，并通过您的密码加密。只有您可以访问它。Rabby 无法检索或访问您的助记词。",
+        "description4": "您的助记词存储在您的设备上，并通过您的密码加密。只有您可以访问它。Helios 无法检索或访问您的助记词。",
         "description3": "切勿分享您的助记词——任何获取助记词的人都可以控制您的资金。",
         "title": "什么是“助记词”",
         "title2": "切勿分享",
@@ -1343,7 +1343,7 @@
       },
       "seedPhrase": {
         "showSeedPhrase": "显示助记词",
-        "importQuestion2": "助记词仅存储在我的手机上，Rabby 无法访问。",
+        "importQuestion2": "助记词仅存储在我的手机上，Helios 无法访问。",
         "riskTips": "在开始之前，请阅读并牢记以下安全提示。",
         "whatIsASeedPhrase": {
           "answer": "用于控制您资产的12、18或24个单词的助记词。",
@@ -1351,10 +1351,10 @@
         },
         "isItSafeToImportItInRabby": {
           "answer": "是的，它将存储在您的手机上，仅您可访问。",
-          "question": "在 Rabby 中导入它是否安全？"
+          "question": "在 Helios 中导入它是否安全？"
         },
         "importQuestion1": "如果我丢失了我的助记词或与他人分享，我的资产将永远丢失。",
-        "importQuestion3": "如果我没有备份助记词，当应用被意外删除、设备丢失或需要重新安装时，Rabby 无法帮助我找回。",
+        "importQuestion3": "如果我没有备份助记词，当应用被意外删除、设备丢失或需要重新安装时，Helios 无法帮助我找回。",
         "manuallyBackup": "手动备份",
         "passwordMinTip": "至少需要 8 个字符",
         "backupSuccessGDrive": "备份到 Google Drive",
@@ -1383,7 +1383,7 @@
         "createdSuccess": "您的助记词已创建",
         "maxAccountCount": "每次最多 50 个地址",
         "icloudBackup": "iCloud 备份",
-        "backupUnlockDesc": "请妥善保管您的密码以便恢复备份。Rabby Wallet 不会储存也无法恢复您的密码。",
+        "backupUnlockDesc": "请妥善保管您的密码以便恢复备份。Helios Wallet 不会储存也无法恢复您的密码。",
         "backupUnlockButton": "继续",
         "addMoreWalletTitle": "通过此助记词\n添加更多钱包"
       },
@@ -1451,7 +1451,7 @@
         "ButtonGotIt": "我知道了",
         "description1": "私钥是一串字母和数字，用于访问和控制您的钱包。您可以使用它在任何设备上恢复您的钱包。",
         "description2": "如果您丢失私钥，将无法恢复钱包。",
-        "description4": "您的私钥存储在设备本地，并使用密码加密。只有您可以访问，Rabby 无法找回或访问您的私钥。",
+        "description4": "您的私钥存储在设备本地，并使用密码加密。只有您可以访问，Helios 无法找回或访问您的私钥。",
         "description3": "切勿分享您的私钥——任何拥有私钥的人都可以控制您的资金。",
         "title3": "永远不要分享它"
       },
@@ -1466,7 +1466,7 @@
       "alert": "这个私钥是您资产的凭证。不要丢失或泄露给他人，否则您可能会永远失去您的资产。请在安全的环境中查看并妥善保管。"
     },
     "ethSign": {
-      "alert": "使用 'eth_sign' 进行签名可能导致资产损失。为了您的安全，Rabby 不支持此方法。"
+      "alert": "使用 'eth_sign' 进行签名可能导致资产损失。为了您的安全，Helios 不支持此方法。"
     },
     "connect": {
       "blocked": "已阻止",
@@ -1501,7 +1501,7 @@
     },
     "walletConnect": {
       "screenTitle": "连接钱包",
-      "connectingToRabby": "正在连接到 Rabby",
+      "connectingToRabby": "正在连接到 Helios",
       "pairingFailed": "WalletConnect 配对失败。",
       "proposalNotReceived": "WalletConnect 二维码可能已失效，请刷新后重试。",
       "connected": "连接成功，请返回 DApp。",
@@ -1525,7 +1525,7 @@
       "tokenSupported": "Rabby 已支持该代币",
       "tokenCustomized": "当前代币已添加到自定义列表",
       "tokenNotFound": "未在该合约地址找到代币",
-      "title": "向 Rabby 添加自定义代币",
+      "title": "向 Helios 添加自定义代币",
       "hasAdded": "您已添加该代币。"
     },
     "createPassword": {
@@ -1545,7 +1545,7 @@
       "ConfirmPassword": "确认密码",
       "passwordPlaceholder": "密码长度必须至少为 8 个字符",
       "confirmError": "密码不匹配",
-      "confirmModalDesc": "请妥善保存您的密码。一旦丢失，Rabby 无法更改或找回。",
+      "confirmModalDesc": "请妥善保存您的密码。一旦丢失，Helios 无法更改或找回。",
       "setWallet": "设置钱包",
       "agree": "我已阅读并同意<1/> <2>使用条款</2>",
       "confirmTitle": "确认密码",
@@ -1630,7 +1630,7 @@
       "verify-fingerprint": "验证指纹",
       "verify-face-id": "验证 Face ID",
       "verify-fingerprint-before-backup": "在备份之前验证您的指纹",
-      "verify-password-before-backup": "在备份之前，请验证您的 Rabby 密码。",
+      "verify-password-before-backup": "在备份之前，请验证您的 Helios 密码。",
       "verify-password": "验证密码",
       "verify-face-id-before-backup": "在备份之前验证您的 Face ID"
     },
@@ -1642,8 +1642,8 @@
       "alreadyClaimedXPoints": "已领取：{{point}}"
     },
     "addChain": {
-      "desc": "Rabby 无法验证自定义网络的安全性。请仅添加可信网络。",
-      "title": "添加自定义网络到 Rabby"
+      "desc": "Helios 无法验证自定义网络的安全性。请仅添加可信网络。",
+      "title": "添加自定义网络到 Helios"
     },
     "sign": {
       "transactionSpeed": "交易速度"
@@ -1698,7 +1698,7 @@
         "rpcUrl": "RPC URL"
       },
       "id": "ID",
-      "desc": "Rabby 无法验证自定义网络的安全性。请仅添加可信网络。",
+      "desc": "Helios 无法验证自定义网络的安全性。请仅添加可信网络。",
       "signTx": {
         "title": "交易数据"
       },
@@ -2001,7 +2001,7 @@
       "clearPending": "清除本地待处理记录",
       "clearPendingDesc2": "这不会改变您账户中的余额，也不需要您重新输入您的助记词。您所有的资产和账户信息都将保持安全。",
       "currentVersion": "当前版本",
-      "clearPendingDesc1": "这会清除 Rabby 中的本地待处理记录，可用于解决 Rabby 显示的交易状态与链上状态不一致的问题。",
+      "clearPendingDesc1": "这会清除 Helios 中的本地待处理记录，可用于解决 Helios 显示的交易状态与链上状态不一致的问题。",
       "touchId": "Touch ID",
       "appCache": "清空应用缓存",
       "currentLanguage": "当前语言",
@@ -2099,11 +2099,11 @@
     "syncExtension": {
       "noNewAddr": "未找到可导入的新地址",
       "scanTips2": "扫描二维码并开始同步",
-      "imported": "在 Rabby Mobile 中已有的地址将不会再次导入。地址备注和白名单会自动同步。",
+      "imported": "在 Helios Mobile 中已有的地址将不会再次导入。地址备注和白名单会自动同步。",
       "syncingProgress": "扫描中（{{ percent }}）",
       "importedSuccessfully": "导入成功！",
       "syncingTips": "请保持相机稳定，直至扫描完成",
-      "newUserVerify": "它也将作为您 Rabby Mobile 的默认密码。",
+      "newUserVerify": "它也将作为您 Helios Mobile 的默认密码。",
       "verifyWithPassword": "使用您的 Rabby 浏览器扩展密码进行验证",
       "scanTips1": "在 Rabby 浏览器扩展中点击“Mobile Sync”",
       "importedTips": "如果应用程序中已经存在重复地址，则不会导入。地址备注和白名单也将同步。",
@@ -2786,7 +2786,7 @@
         "sizeTips": "交易的总价值或数量，由保证金和杠杆决定。",
         "perps": "永续合约",
         "feeHyperliquid": "Hyperliquid",
-        "feeRabby": "Rabby 钱包",
+        "feeRabby": "Helios 钱包",
         "feeDesc": "交易时会产生<1>交易手续费</1>和<2>构建者费用</2>。",
         "feeTitle": "费用",
         "amount": "金额",
@@ -3428,7 +3428,7 @@
     },
     "newUserOnboarding": {
       "restoreWallet": {
-        "title": "恢复您的 Rabby 钱包",
+        "title": "恢复您的 Helios 钱包",
         "subtitle": "欢迎回来！🎉  \n请选择一种方法快速恢复您的钱包。",
         "subtitleInApp": "从下方选择一种方式，快速从 Rabby 浏览器扩展或 iCloud 导入您的钱包"
       },
@@ -3696,7 +3696,7 @@
       "switchArea": {
         "skipText": "1 天内不再显示此弹窗"
       },
-      "alertText": "第三方 DApp：如遇使用问题，请联系 DApp 支持。Rabby 仅提供浏览功能。",
+      "alertText": "第三方 DApp：如遇使用问题，请联系 DApp 支持。Helios 仅提供浏览功能。",
       "title": "截图报告问题",
       "submitFailed": "提交失败。",
       "includeAddress": "分享地址以便排查问题"
@@ -3739,8 +3739,8 @@
   },
   "bluetooth": {
     "permissions_alert": {
-      "title": "\"Rabby Wallet\" 想要使用蓝牙",
-      "message": "Rabby Wallet 使用蓝牙连接 Ledger",
+      "title": "\"Helios Wallet\" 想要使用蓝牙",
+      "message": "Helios Wallet 使用蓝牙连接 Ledger",
       "open_settings": "OK",
       "cancel": "不允许"
     },

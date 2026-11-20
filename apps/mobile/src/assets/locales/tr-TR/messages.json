@@ -35,7 +35,7 @@
       "createNewAddress": "Yeni Cüzdan Oluştur",
       "alreadyHaveAddress": "Zaten bir cüzdanım var",
       "alreadyUseRabby": "Zaten Rabby kullanıyorum.",
-      "welcomeTitle": "Rabby Wallet'a\nhoş geldiniz"
+      "welcomeTitle": "Helios Wallet'a\nhoş geldiniz"
     },
     "transactions": {
       "itemTitle": {
@@ -937,7 +937,7 @@
       "quickAddressTitle_other": "{{count}} Adresler",
       "quickAddressTitle_one": "{{count}} Adres",
       "add-address": "Cüzdan Ekle",
-      "delete-checklist-1": "Anladım ki, bu cüzdanı silersem, ilgili özel anahtar ve kurtarma ifadesi silinecek ve Rabby bunları kurtaramayacak.",
+      "delete-checklist-1": "Anladım ki, bu cüzdanı silersem, ilgili özel anahtar ve kurtarma ifadesi silinecek ve Helios bunları kurtaramayacak.",
       "delete-private-key-title": "Cüzdanı ve Özel Anahtarı Sil",
       "delete-seed-phrase-title": "Cüzdanı ve Kurtarma İfadesini Sil",
       "delete-title": "Cüzdanı Sil"
@@ -983,7 +983,7 @@
       "settings": {
         "cancel": "İptal et",
         "enableWhitelist": "Beyaz Listeyi Etkinleştir",
-        "enableWhitelistTip": "Etkinleştirildikten sonra, yalnızca Rabby kullanarak beyaz listedeki adreslere varlık gönderebilirsiniz.",
+        "enableWhitelistTip": "Etkinleştirildikten sonra, yalnızca Helios kullanarak beyaz listedeki adreslere varlık gönderebilirsiniz.",
         "disableWhitelistTip": "Aktif edildiğinde, varlıkları herhangi bir adrese gönderebilirsiniz.",
         "disableWhitelist": "Beyaz Listeyi Devre Dışı Bırak"
       },
@@ -1039,7 +1039,7 @@
         "createAddress": "Cüzdan Oluştur",
         "selectAddMethod": "Ekleme Yöntemini Seçin",
         "seedPhraseOrPrivateKey": "Kurtarma ifadesi veya özel anahtar",
-        "restoreRabbyWallet": "Rabby Cüzdanını Geri Yükle",
+        "restoreRabbyWallet": "Helios Cüzdanını Geri Yükle",
         "moreOptions": "Daha fazla seçenek"
       },
       "multiAddressHome": {
@@ -1050,9 +1050,9 @@
       "importAddress": {
         "tips": {
           "gotIt": "Anladım",
-          "title": "Rabby'ye aktarmak güvenli mi?",
-          "entry": "Rabby'e aktarmak güvenli mi?",
-          "description": "Verileriniz güvenli bir şekilde şifrelendi ve cihazınızda yerel olarak depolandı. Rabby, özel bilgilerinize erişemez ve bu bilgiler asla üçüncü şahıslarla paylaşılmaz."
+          "title": "Helios'ye aktarmak güvenli mi?",
+          "entry": "Helios'e aktarmak güvenli mi?",
+          "description": "Verileriniz güvenli bir şekilde şifrelendi ve cihazınızda yerel olarak depolandı. Helios, özel bilgilerinize erişemez ve bu bilgiler asla üçüncü şahıslarla paylaşılmaz."
         },
         "seedPhrase": "Kurtarma İfadesini İçe Aktar",
         "privateKey": "Özel Anahtarı İçe Aktar",
@@ -1115,7 +1115,7 @@
         "title2": "Asla Paylaşmayın",
         "description3": "Kurtarma ifadenizi asla paylaşmayın; ona erişen herkes varlıklarınızı kontrol edebilir.",
         "description2": "Eğer kurtarma ifadenizi kaybederseniz, cüzdanınızı geri yükleyemezsiniz.",
-        "description4": "Kurtarma ifadeniz cihazınızda yerel olarak saklanır ve şifrenizle şifrelenir. Yalnızca siz erişebilirsiniz. Rabby kurtarma ifadenize erişemez veya onu geri getiremez.",
+        "description4": "Kurtarma ifadeniz cihazınızda yerel olarak saklanır ve şifrenizle şifrelenir. Yalnızca siz erişebilirsiniz. Helios kurtarma ifadenize erişemez veya onu geri getiremez.",
         "GotIt": "Anladım",
         "description1": "Kurtarma ifadesi, cüzdanınıza erişmek ve onu kontrol etmek için kullanılan bir dizi kelimedir. Cüzdanınızı herhangi bir cihazda geri yüklemek için kullanabilirsiniz."
       },
@@ -1128,7 +1128,7 @@
           "answer": "12, 18 veya 24 kelimelik bir cümle, varlıklarınızı kontrol etmek için kullanılır."
         },
         "isItSafeToImportItInRabby": {
-          "question": "Rabby'de içe aktarmak güvenli mi?",
+          "question": "Helios'de içe aktarmak güvenli mi?",
           "answer": "Evet, telefonunuzda yerel olarak depolanacak ve sadece sizin erişiminize açık olacak."
         },
         "showSeedPhrase": "Kurtarma İfadesini Göster",
@@ -1139,13 +1139,13 @@
         "googleDriveBackup": "Google Drive Yedekleme",
         "chooseBackupMethodTitle": "Yedekleme yöntemi seçin",
         "pastedAndClear": "Yapıştırıldı ve pano temizlendi",
-        "importQuestion2": "Kurtarma ifadesi yalnızca telefonumda saklanır ve Rabby buna erişemez.",
+        "importQuestion2": "Kurtarma ifadesi yalnızca telefonumda saklanır ve Helios buna erişemez.",
         "backupTips": "Kurtarma ifadenizi yedeklerken ekranınızı başka kimsenin görmediğinden emin olun.",
         "importQuestion1": "Kurtarma ifademi kaybedersem veya başkalarıyla paylaşırsam varlıklarımı kalıcı olarak kaybederim.",
         "createdSuccess": "Kurtarma ifadeniz oluşturuldu",
         "riskTips": "Başlamadan önce, lütfen aşağıdaki güvenlik ipuçlarını okuyun ve aklınızda bulundurun.",
         "chooseBackupMethodDesc": "Yedekler, uygulamayı silerseniz veya cihazınızı kaybederseniz cüzdanınızı geri yüklemenizi sağlar.",
-        "importQuestion3": "Kurtarma ifadesini yedeklemeden uygulama silinir, cihaz kaybolur veya yeniden kurulum gerekirse Rabby onu benim için geri getiremez.",
+        "importQuestion3": "Kurtarma ifadesini yedeklemeden uygulama silinir, cihaz kaybolur veya yeniden kurulum gerekirse Helios onu benim için geri getiremez.",
         "backupRestoreButton": "Kurtarma İfadesini İçe Aktar",
         "backupRestoreCreatedAt": "Yedekleme Zamanı:",
         "backupRestoreImported": "İçe Aktarıldı",
@@ -1165,7 +1165,7 @@
         "backupSuccessGDrive": "Google Drive'a Yedeklendi",
         "backupRestoreUnlockDesc": "Yedeklerinizi şifrelemek için ayarladığınız aynı şifreyi kullanın.",
         "passwordMinTip": "En az 8 karakter olmalıdır",
-        "backupUnlockDesc": "Şifrenizi yedekleri geri yüklemek için güvende tutun. Rabby Wallet bunu depolamaz ve geri alamaz.",
+        "backupUnlockDesc": "Şifrenizi yedekleri geri yüklemek için güvende tutun. Helios Wallet bunu depolamaz ve geri alamaz.",
         "addMoreWalletTitle": "Bu cümleden daha fazla cüzdan ekle"
       },
       "privateKey": {
@@ -1174,7 +1174,7 @@
           "answer": "Varlıklarınızı kontrol etmek için kullanılan harfler ve rakamlardan oluşan bir dizi."
         },
         "isItSafeToImportItInRabby": {
-          "question": "Rabby'de bunu içe aktarmak güvenli mi?",
+          "question": "Helios'de bunu içe aktarmak güvenli mi?",
           "answer": "Evet, telefonunuzda yerel olarak saklanacak ve yalnızca sizin erişiminize açık olacak."
         },
         "repeatImportTips": "Bu cüzdan içe aktarılmıştır"
@@ -1316,7 +1316,7 @@
         "description2": "Özel anahtarınızı kaybederseniz cüzdanınızı geri yükleyemezsiniz.",
         "title2": "Yedekleme",
         "title": "Özel anahtar nedir",
-        "description4": "Özel anahtarınız cihazınızda yerel olarak saklanır ve şifrenizle şifrelenir. Ona yalnızca siz erişebilirsiniz. Rabby özel anahtarınıza erişemez veya onu geri alamaz.",
+        "description4": "Özel anahtarınız cihazınızda yerel olarak saklanır ve şifrenizle şifrelenir. Ona yalnızca siz erişebilirsiniz. Helios özel anahtarınıza erişemez veya onu geri alamaz.",
         "description3": "Asla özel anahtarınızı paylaşmayın—ona erişimi olan herkes fonlarınızı kontrol edebilir.",
         "description1": "Özel anahtar, cüzdanınıza erişmek ve kontrol etmek için kullanılan harf ve rakamlar dizisidir. Cüzdanınızı herhangi bir cihazda kurtarmak için bunu kullanabilirsiniz.",
         "title3": "Asla Paylaşma"
@@ -1342,7 +1342,7 @@
         "enableBiometricAlert": {
           "yes": "Evet",
           "title": "{{ bioType }}'yi etkinleştir",
-          "content": "{{ bioType }}'yi Rabby Wallet'ı kilidini açmak için etkinleştirmek ister misiniz?",
+          "content": "{{ bioType }}'yi Helios Wallet'ı kilidini açmak için etkinleştirmek ister misiniz?",
           "no": "İptal et"
         },
         "failedAndTipTitle": "Kilid açma başarısız oldu",
@@ -1355,7 +1355,7 @@
       "tokenNotFound": "Bu sözleşme adresinden token bulunamadı.",
       "tokenSupported": "Token, Rabby üzerinde desteklenmektedir.",
       "hasAdded": "Bu token eklendi.",
-      "title": "Rabby'ye özel token ekle",
+      "title": "Helios'ye özel token ekle",
       "tokenCustomized": "Mevcut token özelleştirilmiş'e zaten eklenmiştir."
     },
     "switchChain": {
@@ -1464,7 +1464,7 @@
       "verify-face-id": "Yüz Tanıma Doğrula",
       "verify-face-id-before-backup": "Yedeklemeden önce Face ID'nizi doğrulayın",
       "verify-and-backup": "Doğrula ve yedekle",
-      "verify-password-before-backup": "Rabby şifrenizi yedeklemeden önce doğrulayın"
+      "verify-password-before-backup": "Helios şifrenizi yedeklemeden önce doğrulayın"
     },
     "customRpc": {
       "EditCustomTestnetModal": {
@@ -1517,7 +1517,7 @@
       "alert": "Bu Özel Anahtar, varlıklarınıza erişim sağlar. Onu kaybetmeyin veya başkalarına ifşa etmeyin, aksi takdirde varlıklarınızı sonsuza dek kaybedebilirsiniz. Lütfen bunu güvenli bir ortamda görüntüleyin ve dikkatlice saklayın."
     },
     "ethSign": {
-      "alert": "'eth_sign' ile imza atmak varlık kaybına yol açabilir. Güvenliğiniz için, Rabby bu yöntemi desteklememektedir."
+      "alert": "'eth_sign' ile imza atmak varlık kaybına yol açabilir. Güvenliğiniz için, Helios bu yöntemi desteklememektedir."
     },
     "createPassword": {
       "setUpSuccess": "Şifre Başarıyla Ayarlandı",
@@ -1533,7 +1533,7 @@
       "passwordPlaceholder": "Parola en az 8 karakter uzunluğunda olmalıdır.",
       "ConfirmPassword": "Şifreyi doğrula",
       "biometricsFail": "Biyometrik kimlik doğrulama etkinleştirme başarısız oldu",
-      "confirmModalDesc": "Lütfen şifrenizi düzgün bir şekilde saklayın. Bir kez kaybolduğunda, Rabby tarafından değiştirilemez veya kurtarılamaz.",
+      "confirmModalDesc": "Lütfen şifrenizi düzgün bir şekilde saklayın. Bir kez kaybolduğunda, Helios tarafından değiştirilemez veya kurtarılamaz.",
       "setWallet": "Cüzdanı Ayarla",
       "confirmError": "Şifreler uyuşmuyor",
       "confirmTitle": "Şifreyi Onayla",
@@ -1595,7 +1595,7 @@
       "empty": "Özel Ağ Yok",
       "id": "Tanım",
       "add": "Özel Ağ Ekle",
-      "desc": "Rabby, özel ağların güvenliğini doğrulayamaz. Lütfen sadece güvenilir ağlar ekleyin.",
+      "desc": "Helios, özel ağların güvenliğini doğrulayamaz. Lütfen sadece güvenilir ağlar ekleyin.",
       "addToken": {
         "title": "Özel Ağ Tokeni Ekle",
         "chain": "Zincir",
@@ -1613,8 +1613,8 @@
       }
     },
     "addChain": {
-      "title": "Rabby'ye Özel Ağı Ekle",
-      "desc": "Rabby, özel ağların güvenliğini doğrulayamaz. Lütfen yalnızca güvenilir ağlar ekleyin."
+      "title": "Helios'ye Özel Ağı Ekle",
+      "desc": "Helios, özel ağların güvenliğini doğrulayamaz. Lütfen yalnızca güvenilir ağlar ekleyin."
     },
     "sign": {
       "transactionSpeed": "İşlem Hızı"
@@ -1908,7 +1908,7 @@
       "clearPendingToast": "Yerel bekleyen işlem kaldırıldı",
       "clearPendingResetDesc": "Ayrıca yerel nonce verimi ve imza kaydımı sıfırlayın.",
       "clearPendingWarning": "Kaldırılan işlem, yerine geçilmediği sürece hala zincir üzerinde onaylanabilir.",
-      "clearPendingDesc1": "Bu, tüm bekleyen işlemlerinizi temizleyecektir. Bu, bazı durumlarda Rabby'deki işlemin durumunun zincirdeki durumla eşleşmemesi sorununu çözmenize yardımcı olabilir.",
+      "clearPendingDesc1": "Bu, tüm bekleyen işlemlerinizi temizleyecektir. Bu, bazı durumlarda Helios'deki işlemin durumunun zincirdeki durumla eşleşmemesi sorununu çözmenize yardımcı olabilir.",
       "clearPendingDesc2": "Bu işlem hesap bakiyelerinizi değiştirmez veya kurtarma ifadenizi yeniden girmenizi gerektirmez. Tüm varlıklarınız ve hesap bilgileriniz güvende kalır.",
       "addCustomNetwork": "Özel Ağ Ekle",
       "clearBrowserData": "Tarayıcı Verilerini Temizle",
@@ -1956,8 +1956,8 @@
       "importedSuccessfully": "Başarıyla İçe Aktarıldı!",
       "noNewAddr": "İçe aktarılacak yeni adres bulunamadı.",
       "syncingProgress": "Tarama ({{ percent }})",
-      "imported": "Rabby Mobile'da zaten bulunan adresler tekrar içe aktarılmayacaktır. Adres notları ve beyaz listeler otomatik olarak senkronize edilecektir.",
-      "newUserVerify": "Ayrıca, bu sizin Rabby Mobile için varsayılan şifre olarak da hizmet edecektir.",
+      "imported": "Helios Mobile'da zaten bulunan adresler tekrar içe aktarılmayacaktır. Adres notları ve beyaz listeler otomatik olarak senkronize edilecektir.",
+      "newUserVerify": "Ayrıca, bu sizin Helios Mobile için varsayılan şifre olarak da hizmet edecektir.",
       "scanTips2": "Kodu tara ve senkronizasyona başla",
       "importedTips": "Eğer UYGULAMA zaten bir kopya adrese sahipse, bu adres içe aktarılmayacaktır. Adres notları ve beyaz listeler de senkronize edilecektir.",
       "verifyTips": "Veri bilgileriniz çevrimdışı olarak şifrelenmiştir. Şifreyi çözüp doğrulamak için Rabby Extension parolanızı girin."
@@ -2635,7 +2635,7 @@
         "gotItBtn": "Tamamdır",
         "perps": "Perps",
         "sizeTips": "Ticaretinizin toplam değeri veya miktarı, teminat ve kaldıraç tarafından belirlenir.",
-        "feeRabby": "Rabby Cüzdan",
+        "feeRabby": "Helios Cüzdan",
         "feeHyperliquid": "Hyperliquid",
         "feeTitle": "Ücret",
         "feeDesc": "İşlem yapıldığında hem <1>işlem ücretleri</1> hem de <2>builder ücretleri</2> uygulanır.",
@@ -3281,7 +3281,7 @@
     },
     "newUserOnboarding": {
       "restoreWallet": {
-        "title": "Rabby cüzdanınızı geri yükleyin",
+        "title": "Helios cüzdanınızı geri yükleyin",
         "subtitle": "Tekrar hoş geldiniz! 🎉\nCüzdanınızı hızla geri yüklemek için bir yöntem seçin.",
         "subtitleInApp": "Cüzdanlarınızı Rabby uzantısından veya iCloud'dan hızlıca içe aktarmak için aşağıdan bir seçenek belirleyin."
       },
@@ -3422,7 +3422,7 @@
     },
     "walletConnect": {
       "screenTitle": "Cüzdanı Bağla",
-      "connectingToRabby": "Rabby'ye bağlanıyor",
+      "connectingToRabby": "Helios'ye bağlanıyor",
       "pairingFailed": "WalletConnect eşleştirmesi başarısız.",
       "proposalNotReceived": "WalletConnect QR kodunun süresi dolmuş olabilir. Lütfen yenileyip tekrar deneyin.",
       "connected": "Başarıyla bağlandı. Lütfen DApp'e geri dönün.",
@@ -3570,7 +3570,7 @@
       "switchArea": {
         "skipText": "Bu açılır pencereyi 1 gün için atla"
       },
-      "alertText": "Üçüncü taraf DApp: kullanım sorunları için lütfen DApp desteğiyle iletişime geçin. Rabby yalnızca görüntüleme erişimi sağlar.",
+      "alertText": "Üçüncü taraf DApp: kullanım sorunları için lütfen DApp desteğiyle iletişime geçin. Helios yalnızca görüntüleme erişimi sağlar.",
       "title": "Hata Bildirmek için Ekran Görüntüsü",
       "submitFailed": "Gönderim başarısız.",
       "includeAddress": "Sorun giderme için adresi paylaş"
@@ -3623,7 +3623,7 @@
     "authentication": {
       "auth_prompt_cancel": "İptal Et",
       "auth_prompt_title": "Kimlik doğrulama gerekiyor",
-      "auth_prompt_desc": "Lütfen Rabby'yi kullanmak için kimlik doğrulaması yapın."
+      "auth_prompt_desc": "Lütfen Helios'yi kullanmak için kimlik doğrulaması yapın."
     }
   },
   "global": {
@@ -3654,7 +3654,7 @@
     "nonce": "nonce",
     "backButton": "Geri",
     "folded": "Daraltıldı",
-    "appName": "Rabby Wallet",
+    "appName": "Helios Wallet",
     "refresh": "Yenile",
     "Deleted": "Silindi",
     "WalletCreated": "Cüzdan oluşturuldu",
@@ -3773,8 +3773,8 @@
     "permissions_alert": {
       "cancel": "İzin Verme",
       "open_settings": "Tamam",
-      "message": "Rabby Wallet, Ledger ile bağlantı kurmak için bluetooth erişimi kullanır.",
-      "title": "\"Rabby Wallet\" Bluetooth Kullanmak İstiyor"
+      "message": "Helios Wallet, Ledger ile bağlantı kurmak için bluetooth erişimi kullanır.",
+      "title": "\"Helios Wallet\" Bluetooth Kullanmak İstiyor"
     },
     "update_firmware_alert": {
       "cancel": "İptal et",
