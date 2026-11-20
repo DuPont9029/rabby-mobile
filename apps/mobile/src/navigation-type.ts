@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { SolanaScreenParams } from './screens/Solana/types';
 import type {
   CompositeScreenProps,
   NavigatorScreenParams,
@@ -81,6 +82,9 @@ export type RootStackParamsList = {
   [RootNames.StackDapps]: NavigatorScreenParams<DappsNavigatorParamsList>;
   [RootNames.StackBrowser]: NavigatorScreenParams<BrowserNavigatorParamsList>;
   [RootNames.StackTestkits]: NavigatorScreenParams<TestKitsNavigatorParamsList>;
+  [RootNames.SolanaHome]: SolanaScreenParams['SolanaHome'];
+  [RootNames.SolanaSend]: SolanaScreenParams['SolanaSend'];
+  [RootNames.SolanaNftDetail]: SolanaScreenParams['SolanaNftDetail'];
   [RootNames.NftDetail]: {
     token: NFTItem | TransferingNFTItem | TokenItem | TokenItem[];
     account?: KeyringAccountWithAlias;

@@ -54,3 +54,33 @@ export const MyBundleScreen = registerAppScreen<
   loader: () => import('@/screens/Assets/MyBundle'),
   name: RootNames.MyBundle,
 });
+
+export const SolanaHomeScreen = registerAppScreen<
+  typeof import('@/screens/Solana/SolanaHomeScreen').SolanaHomeScreen
+>({
+  loader: () =>
+    import('@/screens/Solana/SolanaHomeScreen').then(m => ({
+      default: m.SolanaHomeScreen,
+    })),
+  name: RootNames.SolanaHome,
+});
+
+export const SolanaSendScreen = registerAppScreen<
+  typeof import('@/screens/Solana/SolanaSendScreen').SolanaSendScreen
+>({
+  loader: () =>
+    import('@/screens/Solana/SolanaSendScreen').then(m => ({
+      default: m.SolanaSendScreen,
+    })),
+  name: RootNames.SolanaSend,
+});
+
+export const SolanaNftDetailScreen = registerAppScreen<
+  typeof import('@/screens/Solana/SolanaNftDetailScreen').SolanaNftDetailScreen
+>({
+  loader: () =>
+    import('@/screens/Solana/SolanaNftDetailScreen').then(m => ({
+      default: m.SolanaNftDetailScreen,
+    })),
+  name: RootNames.SolanaNftDetail,
+});

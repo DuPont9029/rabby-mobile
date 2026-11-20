@@ -18,6 +18,7 @@ export enum MultiHomeFeatTitle {
   Lending = 'Lending',
   ConvertDust = 'Convert Dust',
   NFT = 'NFT',
+  Solana = 'Solana',
   MemeCoin = 'MemeCoin',
   /** @deprecated */
   TEST_DAPP = 'TEST_DAPP',
