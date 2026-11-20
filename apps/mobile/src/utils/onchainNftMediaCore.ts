@@ -146,12 +146,74 @@ export const inlineImageToSvg = (value?: unknown): string | null => {
   return null;
 };
 
+export type NftAttribute = { trait: string; value: string };
+
 export type OnchainNftMetadata = {
   name?: string;
   description?: string;
   image?: unknown;
   image_data?: unknown;
   animation_url?: unknown;
+  /** Display-only, as text. `external_url` is never opened automatically. */
+  externalUrl?: string;
+  attributes?: NftAttribute[];
+  /** Pretty-printed JSON for display, long strings (e.g. images) shortened. */
+  raw?: string;
+};
+
+const MAX_ATTRIBUTES = 100;
+const MAX_ATTRIBUTE_CHARS = 200;
+const MAX_RAW_STRING_CHARS = 160;
+const MAX_RAW_CHARS = 20_000;
+
+const attributeText = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    return value.slice(0, MAX_ATTRIBUTE_CHARS);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return null;
+};
+
+/** Reads OpenSea-style `attributes` (or `traits`) as plain text pairs. */
+const parseAttributes = (value: unknown): NftAttribute[] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const attributes: NftAttribute[] = [];
+  for (const entry of value.slice(0, MAX_ATTRIBUTES)) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const trait =
+      attributeText(record.trait_type) ?? attributeText(record.trait) ?? '';
+    const text = attributeText(record.value);
+    if (text !== null) {
+      attributes.push({ trait, value: text });
+    }
+  }
+  return attributes;
+};
+
+/** JSON for display: long strings (embedded images, scripts) are shortened. */
+export const toDisplayJson = (value: unknown): string => {
+  try {
+    const text = JSON.stringify(
+      value,
+      (_key, item) =>
+        typeof item === 'string' && item.length > MAX_RAW_STRING_CHARS
+          ? `${item.slice(0, MAX_RAW_STRING_CHARS)}… (${item.length} chars)`
+          : item,
+      2,
+    );
+    return text.length > MAX_RAW_CHARS
+      ? `${text.slice(0, MAX_RAW_CHARS)}\n…`
+      : text;
+  } catch {
+    return '';
+  }
 };
 
 /**
@@ -189,6 +251,9 @@ export const parseInlineTokenUri = (
       image: metadata.image,
       image_data: metadata.image_data,
       animation_url: metadata.animation_url,
+      externalUrl: text('external_url'),
+      attributes: parseAttributes(metadata.attributes ?? metadata.traits),
+      raw: toDisplayJson(metadata),
     };
   } catch {
     return null;

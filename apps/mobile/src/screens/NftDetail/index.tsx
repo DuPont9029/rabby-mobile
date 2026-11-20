@@ -9,6 +9,7 @@ import { Text } from '@/components';
 import type { NFTItem, TokenItem } from '@rabby-wallet/rabby-api/dist/types';
 import { Media } from '@/components/Media';
 import { NftImageViewer } from '@/components/NftImageViewer';
+import { NftMetadataSection } from '@/components/NftMetadataSection';
 import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
 import { IconDefaultNFT, IconNumberNFT } from '@/assets/icons/nft';
 import { CHAINS_ENUM } from '@/constant/chains';
@@ -375,6 +376,7 @@ export const NFTDetailScreen = () => {
             <ListItem title="Purchase Date" value={calDate(iToken)} />
             <ListItem title="Last Price" value={calPrice(iToken)} />
           </View>
+          <NftMetadataSection nft={iToken} />
           {showInlineButton && !!address && (
             <View style={[styles.buttonContainer]}>
               <Button

@@ -30,6 +30,23 @@
     }
   },
   "page": {
+    "nftDetail": {
+      "metadata": {
+        "title": "Metadata",
+        "contract": "Contract",
+        "tokenId": "Token ID",
+        "standard": "Standard",
+        "storage": "Metadata",
+        "externalUrl": "External URL",
+        "description": "Description",
+        "attributes": "Attributes",
+        "showRaw": "Show raw metadata",
+        "hideRaw": "Hide raw metadata",
+        "loading": "Loading…",
+        "onchain": "On-chain",
+        "unavailable": "Not readable on-chain"
+      }
+    },
     "nftImport": {
       "toggle": "+ Import on-chain NFT",
       "title": "Import on-chain NFT",
@@ -979,6 +996,7 @@
     },
     "home": {
       "services": {
+        "nft": "NFT",
         "swap": "Swap",
         "bridge": "Bridge",
         "send": "Send",

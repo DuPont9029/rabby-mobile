@@ -10,6 +10,7 @@ import RcIconReceiveCC from '@/assets2024/icons/home/IconReceiveCC.svg';
 import RcIconSendCC from '@/assets2024/icons/home/IconSendCC.svg';
 import RcIconSwapCC from '@/assets2024/icons/home/IconSwapCC.svg';
 import RcIconMarketCC from '@/assets2024/icons/home/IconMarketCC.svg';
+import RcIconNftCC from '@/assets2024/icons/home/IconNftCC.svg';
 import RcIconConvertDustCC from '@/assets2024/icons/home/IconDustCC.svg';
 import RcIconMemeCoinCC from '@/assets2024/icons/home/IconMemeCoinCC.svg';
 
@@ -58,7 +59,12 @@ import {
   refreshMemeHoldings,
   refreshMemeHoldingsIfStale,
 } from '@/screens/MemeCoin/data/memeHoldingsStore';
-import { apisHomeTabIndex, useRabbyAppNavigation } from '@/hooks/navigation';
+import {
+  apisHomeTabIndex,
+  HomeTabName,
+  TabbarLabels,
+  useRabbyAppNavigation,
+} from '@/hooks/navigation';
 import { navigateToPerpsHome } from '@/hooks/perps/navigation/navigateToPreferredPerps';
 import addressBalanceStore, {
   balanceAccountsStore,
@@ -964,6 +970,11 @@ export const HomeOverview = React.memo(() => {
           icon: RcIconReceiveCC,
         },
         {
+          key: MultiHomeFeatTitle.NFT,
+          title: t('page.home.services.nft'),
+          icon: RcIconNftCC,
+        },
+        {
           key: MultiHomeFeatTitle.Perps,
           title: t('page.home.services.perps'),
           icon: RcIconPerps,
@@ -1289,6 +1300,13 @@ export const HomeOverview = React.memo(() => {
               screen: RootNames.MultiAddressHistory,
               params: {},
             }),
+          );
+          break;
+        case MultiHomeFeatTitle.NFT:
+          // The NFT list of all wallets is a tab of this same screen.
+          apisHomeTabIndex.setTabIndex(
+            TabbarLabels[HomeTabName.nft].index,
+            true,
           );
           break;
         case MultiHomeFeatTitle.Approvals:

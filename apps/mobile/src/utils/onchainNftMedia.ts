@@ -114,36 +114,52 @@ export const fetchTokenUri = async (ref: OnchainNftRef) => {
   return null;
 };
 
-const metadataCache = new Map<string, Promise<OnchainNftMetadata | null>>();
+export type OnchainNftDetails = {
+  /** The raw token URI (shown as text only; remote URIs are never fetched). */
+  tokenUri: string | null;
+  /** Parsed metadata when the token URI is an inline `data:` document. */
+  metadata: OnchainNftMetadata | null;
+};
+
+const detailsCache = new Map<string, Promise<OnchainNftDetails>>();
 
 const cacheKey = ({ chain, contractId, tokenId }: OnchainNftRef) =>
   `${chain}:${contractId.toLowerCase()}:${tokenId}`;
 
 /**
- * On-chain metadata for an NFT whose token URI is an inline
- * `data:application/json` document, or `null` (remote URIs are not fetched).
+ * The token URI and, when it is an inline `data:application/json` document,
+ * its parsed metadata. Remote URIs are returned as text but never fetched.
  * Results, including misses, are cached for the app session.
  */
-export const loadOnchainNftMetadata = (
+export const loadOnchainNftDetails = (
   ref: OnchainNftRef,
-): Promise<OnchainNftMetadata | null> => {
+): Promise<OnchainNftDetails> => {
   const key = cacheKey(ref);
-  const cached = metadataCache.get(key);
+  const cached = detailsCache.get(key);
   if (cached) {
     return cached;
   }
   const pending = fetchTokenUri(ref)
-    .then(parseInlineTokenUri)
-    .catch(() => null);
-  metadataCache.set(key, pending);
-  if (metadataCache.size > MAX_CACHE_ENTRIES) {
-    const oldest = metadataCache.keys().next().value;
+    .then(tokenUri => ({
+      tokenUri,
+      metadata: parseInlineTokenUri(tokenUri),
+    }))
+    .catch(() => ({ tokenUri: null, metadata: null }));
+  detailsCache.set(key, pending);
+  if (detailsCache.size > MAX_CACHE_ENTRIES) {
+    const oldest = detailsCache.keys().next().value;
     if (oldest !== undefined) {
-      metadataCache.delete(oldest);
+      detailsCache.delete(oldest);
     }
   }
   return pending;
 };
+
+/** On-chain inline metadata, or `null` (remote URIs are not fetched). */
+export const loadOnchainNftMetadata = async (
+  ref: OnchainNftRef,
+): Promise<OnchainNftMetadata | null> =>
+  (await loadOnchainNftDetails(ref)).metadata;
 
 /** SVG markup of the NFT's on-chain artwork, or `null`. */
 export const loadOnchainNftSvg = async (ref: OnchainNftRef) =>
@@ -212,5 +228,5 @@ export const checkOnchainNftOwnership = async (
 };
 
 export const __resetOnchainNftMediaCacheForTests = () => {
-  metadataCache.clear();
+  detailsCache.clear();
 };
