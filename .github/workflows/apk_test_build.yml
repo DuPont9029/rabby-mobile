@@ -104,7 +104,7 @@ jobs:
           test -n "$src"
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
           "$apksigner" verify --print-certs "$src" | tee signer.txt
-          grep -q "Signer #1 certificate DN: CN=Rabby fork test build" signer.txt
+          grep -q "certificate SHA-256 digest: 61b3b565e8959354a57dff200100f2458c39dbf76f73b30eb08499624dab6cc3" signer.txt
           out="rabby-mobile-safe-svg-fontface-${GITHUB_SHA::7}-arm64-signed.apk"
           cp "$src" "$out"
           ls -lh "$out"
