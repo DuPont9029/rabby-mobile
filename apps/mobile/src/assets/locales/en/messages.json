@@ -31,6 +31,8 @@
   },
   "page": {
     "solana": {
+      "locked": "The wallet is locked: unlock it and open Solana again.",
+      "notHdAccount": "This address was not created from a seed phrase in this app (e.g. an imported private key or a hardware wallet), so there is no Solana key to derive.",
       "signFailed": "Could not sign with this wallet.",
       "edit": "Edit",
       "warnTransferFee": "This token charges a {{percent}}% transfer fee: the recipient receives less than the amount sent.",

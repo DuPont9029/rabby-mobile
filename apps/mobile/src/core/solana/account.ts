@@ -17,7 +17,11 @@ import { keccak_256 } from '@noble/hashes/sha3';
 import { bytesToHex } from '@noble/hashes/utils';
 import { KEYRING_CLASS } from '@rabby-wallet/keyring-utils';
 
-import { keyringServiceApi } from '@/core/serviceApi/keyring';
+import {
+  getKeyringInstancesSnapshot,
+  keyringServiceApi,
+} from '@/core/serviceApi/keyring';
+import { mnemonicToSeedSync } from '@scure/bip39';
 import {
   deriveEd25519PrivateKey,
   encodeAddress,
@@ -26,23 +30,31 @@ import {
 } from './keys';
 
 type HdKeyringLike = {
+  type?: string;
+  accounts?: string[];
   mnemonic?: string | null;
   passphrase?: string | null;
-  getSeed: (mnemonic: string, passphrase?: string) => Uint8Array;
   hdPath?: string;
-  getInfoByAddress: (
+  getSeed?: (mnemonic: string, passphrase?: string) => Uint8Array;
+  getInfoByAddress?: (
     address: string,
   ) => { index?: number; hdPath?: string } | null;
 };
 
-const LEDGER_LIVE_BASE = "m/44'/60'/0'/0/0";
+const HD_PATH_BASES = {
+  bip44: "m/44'/60'/0'/0",
+  legacy: "m/44'/60'/0'",
+  ledgerLive: "m/44'/60'/0'/0/0",
+};
+/** How far the index search goes when the keyring has no account details. */
+const MAX_SCANNED_INDEX = 100;
 
 /**
  * EVM path of account `index` under the HD path that account was created
  * with (a keyring can mix BIP44, Legacy and Ledger Live accounts).
  */
 const evmPathFor = (hdPath: string, index: number) =>
-  hdPath === LEDGER_LIVE_BASE
+  hdPath === HD_PATH_BASES.ledgerLive
     ? `m/44'/60'/${index}'/0/0`
     : `${hdPath}/${index}`;
 
@@ -52,45 +64,146 @@ export type SolanaAccount = {
   address: string;
 };
 
+export type SolanaAccountErrorReason =
+  | 'not_hd_account'
+  | 'seed_mismatch'
+  | 'locked'
+  | 'key_mismatch';
+
 export class SolanaAccountError extends Error {
-  constructor(
-    readonly reason:
-      | 'not_hd_account'
-      | 'seed_mismatch'
-      | 'locked'
-      | 'key_mismatch',
-  ) {
+  constructor(readonly reason: SolanaAccountErrorReason) {
     super(reason);
     this.name = 'SolanaAccountError';
   }
 }
 
-const evmAddressFromSeed = (seed: Uint8Array, path: string) => {
+const evmAddressFromKey = (key: HDKey) => {
+  if (!key.publicKey) {
+    throw new SolanaAccountError('seed_mismatch');
+  }
+  const uncompressed = secp256k1.ProjectivePoint.fromHex(
+    key.publicKey,
+  ).toRawBytes(false);
+  return `0x${bytesToHex(keccak_256(uncompressed.slice(1)).slice(-20))}`;
+};
+
+/**
+ * The index of `evmAddress` under the seed, with the path it was found on.
+ * Tries the index the keyring recorded first, then searches the standard
+ * paths (keyrings imported long ago may not record account details). The
+ * search itself is the cross-check: only an index whose derived EVM address
+ * equals `evmAddress` is ever returned.
+ */
+const findAccountIndex = (
+  seed: Uint8Array,
+  evmAddress: string,
+  hint: { index?: number; hdPath?: string },
+): number | null => {
+  const target = evmAddress.toLowerCase();
   const master = HDKey.fromMasterSeed(seed);
-  const child = master.derive(path);
   try {
-    if (!child.publicKey) {
-      throw new SolanaAccountError('seed_mismatch');
+    const matches = (path: string) => {
+      const child = master.derive(path);
+      try {
+        return evmAddressFromKey(child).toLowerCase() === target;
+      } finally {
+        child.wipePrivateData();
+      }
+    };
+    const paths = [
+      hint.hdPath,
+      HD_PATH_BASES.bip44,
+      HD_PATH_BASES.legacy,
+      HD_PATH_BASES.ledgerLive,
+    ].filter(
+      (path, i, all): path is string => !!path && all.indexOf(path) === i,
+    );
+    if (
+      typeof hint.index === 'number' &&
+      Number.isInteger(hint.index) &&
+      hint.index >= 0
+    ) {
+      for (const base of paths) {
+        if (matches(evmPathFor(base, hint.index))) {
+          return hint.index;
+        }
+      }
     }
-    const uncompressed = secp256k1.ProjectivePoint.fromHex(
-      child.publicKey,
-    ).toRawBytes(false);
-    return `0x${bytesToHex(keccak_256(uncompressed.slice(1)).slice(-20))}`;
+    for (const base of paths) {
+      if (base === HD_PATH_BASES.ledgerLive) {
+        // Ledger Live hardens the account level: derive each path in full.
+        for (let index = 0; index < MAX_SCANNED_INDEX; index += 1) {
+          if (matches(evmPathFor(base, index))) {
+            return index;
+          }
+        }
+        continue;
+      }
+      // Derive the parent once; children are one cheap step each.
+      const parent = master.derive(base);
+      try {
+        for (let index = 0; index < MAX_SCANNED_INDEX; index += 1) {
+          const child = parent.deriveChild(index);
+          try {
+            if (evmAddressFromKey(child).toLowerCase() === target) {
+              return index;
+            }
+          } finally {
+            child.wipePrivateData();
+          }
+        }
+      } finally {
+        parent.wipePrivateData();
+      }
+    }
+    return null;
   } finally {
-    child.wipePrivateData();
     master.wipePrivateData();
   }
 };
 
-const loadKeyring = async (evmAddress: string) => {
+/** The live HD keyring instance that holds `evmAddress`. */
+const loadKeyring = async (
+  evmAddress: string,
+): Promise<HdKeyringLike | null> => {
+  const target = evmAddress.toLowerCase();
+  const holds = (keyring?: HdKeyringLike | null) =>
+    !!keyring &&
+    keyring.type === KEYRING_CLASS.MNEMONIC &&
+    Array.isArray(keyring.accounts) &&
+    keyring.accounts.some(account => account?.toLowerCase() === target);
+  let fromSnapshot: HdKeyringLike | null = null;
   try {
-    return (await keyringServiceApi.getKeyringForAccount(
+    fromSnapshot =
+      (getKeyringInstancesSnapshot() as unknown as HdKeyringLike[]).find(
+        holds,
+      ) || null;
+  } catch {
+    // Snapshot not available yet: ask the service below.
+  }
+  if (fromSnapshot?.mnemonic) {
+    return fromSnapshot;
+  }
+  try {
+    const keyring = (await keyringServiceApi.getKeyringForAccount(
       evmAddress,
       KEYRING_CLASS.MNEMONIC,
     )) as unknown as HdKeyringLike;
+    return keyring || fromSnapshot;
   } catch {
-    throw new SolanaAccountError('not_hd_account');
+    return fromSnapshot;
   }
+};
+
+const seedOf = (keyring: HdKeyringLike, mnemonic: string) => {
+  const passphrase = keyring.passphrase || '';
+  const raw =
+    typeof keyring.getSeed === 'function'
+      ? keyring.getSeed(mnemonic, passphrase)
+      : mnemonicToSeedSync(mnemonic, passphrase);
+  const seed = Uint8Array.from(raw);
+  raw.fill(0);
+  return seed;
 };
 
 /**
@@ -106,24 +219,29 @@ const withVerifiedSeed = async <T>(
   ) => T extends Promise<unknown> ? never : T,
 ): Promise<T> => {
   const keyring = await loadKeyring(evmAddress);
-  if (!keyring?.mnemonic) {
+  if (!keyring) {
+    throw new SolanaAccountError('not_hd_account');
+  }
+  if (!keyring.mnemonic) {
     throw new SolanaAccountError('locked');
   }
-  const info = keyring.getInfoByAddress(evmAddress.toLowerCase());
-  const index = info?.index;
-  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
-    throw new SolanaAccountError('not_hd_account');
-  }
-  const hdPath = info?.hdPath || keyring.hdPath;
-  if (!hdPath) {
-    throw new SolanaAccountError('not_hd_account');
-  }
-  const rawSeed = keyring.getSeed(keyring.mnemonic, keyring.passphrase || '');
-  const seed = Uint8Array.from(rawSeed);
-  rawSeed.fill(0);
+  let hint: { index?: number; hdPath?: string } = {};
   try {
-    const derived = evmAddressFromSeed(seed, evmPathFor(hdPath, index));
-    if (derived.toLowerCase() !== evmAddress.toLowerCase()) {
+    hint =
+      keyring.getInfoByAddress?.(evmAddress.toLowerCase()) ||
+      keyring.getInfoByAddress?.(evmAddress) ||
+      {};
+  } catch {
+    hint = {};
+  }
+  if (!hint.hdPath && keyring.hdPath) {
+    hint = { ...hint, hdPath: keyring.hdPath };
+  }
+  const seed = seedOf(keyring, keyring.mnemonic);
+  try {
+    const index = findAccountIndex(seed, evmAddress, hint);
+    if (index === null) {
+      // The seed does not produce this address (e.g. passphrase not loaded).
       throw new SolanaAccountError('seed_mismatch');
     }
     return use(seed, index);

@@ -7,10 +7,14 @@ import {
   SolanaAccountError,
   withSolanaSigner,
 } from './account';
-import { keyringServiceApi } from '@/core/serviceApi/keyring';
+import {
+  getKeyringInstancesSnapshot,
+  keyringServiceApi,
+} from '@/core/serviceApi/keyring';
 
 jest.mock('@/core/serviceApi/keyring', () => ({
   keyringServiceApi: { getKeyringForAccount: jest.fn() },
+  getKeyringInstancesSnapshot: jest.fn(() => []),
 }));
 
 const MNEMONIC =
@@ -114,5 +118,79 @@ describe('Solana accounts derived from HD keyrings', () => {
         ),
       ),
     ).toBe('key_mismatch');
+  });
+
+  it('finds the index itself when the keyring recorded no account details', async () => {
+    const keyring = await makeKeyring();
+    const [, second] = await keyring.getAccounts();
+    // Older imports: no accountDetails, and no getInfoByAddress at all.
+    const bare = {
+      type: 'HD Key Tree',
+      accounts: [second],
+      mnemonic: MNEMONIC,
+      passphrase: '',
+    };
+    jest
+      .mocked(keyringServiceApi.getKeyringForAccount)
+      .mockResolvedValue(bare as never);
+
+    await expect(getSolanaAccount(second)).resolves.toMatchObject({
+      index: 1,
+      address: vectors.derivation[1].address,
+    });
+  });
+
+  it('uses the live keyring instance when the service lookup fails', async () => {
+    const keyring = await makeKeyring();
+    const [first] = await keyring.getAccounts();
+    jest
+      .mocked(getKeyringInstancesSnapshot)
+      .mockReturnValue([keyring] as never);
+    jest
+      .mocked(keyringServiceApi.getKeyringForAccount)
+      .mockRejectedValue(new Error('runtime not ready'));
+
+    await expect(
+      getSolanaAccount(first.toUpperCase().replace('0X', '0x')),
+    ).resolves.toMatchObject({
+      address: vectors.derivation[0].address,
+    });
+    jest.mocked(getKeyringInstancesSnapshot).mockReturnValue([] as never);
+  });
+
+  it('finds accounts created on the Legacy and Ledger Live paths', async () => {
+    for (const hdPath of ["m/44'/60'/0'", "m/44'/60'/0'/0/0"]) {
+      __resetSolanaAccountCacheForTests();
+      const keyring = new HdKeyring({ mnemonic: MNEMONIC, hdPath });
+      await keyring.activeAccounts([2]);
+      const [address] = await keyring.getAccounts();
+      jest
+        .mocked(keyringServiceApi.getKeyringForAccount)
+        .mockResolvedValue(keyring as never);
+
+      await expect(getSolanaAccount(address)).resolves.toMatchObject({
+        index: 2,
+        address:
+          vectors.derivation.find(d => d.index === 2)?.address ??
+          expect.any(String),
+      });
+    }
+  });
+
+  it('still refuses when no index of the seed produces the address', async () => {
+    const bare = {
+      type: 'HD Key Tree',
+      accounts: ['0x000000000000000000000000000000000000dead'],
+      mnemonic: MNEMONIC,
+    };
+    jest
+      .mocked(keyringServiceApi.getKeyringForAccount)
+      .mockResolvedValue(bare as never);
+
+    expect(
+      await reasonOf(
+        getSolanaAccount('0x000000000000000000000000000000000000dEaD'),
+      ),
+    ).toBe('seed_mismatch');
   });
 });
