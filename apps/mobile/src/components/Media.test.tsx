@@ -381,6 +381,25 @@ describe('Media inline and on-chain artwork fallback', () => {
     });
   });
 
+  it('reads on-chain artwork when the indexer sends a null content type', async () => {
+    jest.mocked(loadOnchainNftArtwork).mockResolvedValue({
+      svg: INLINE_SVG,
+      transient: false,
+    });
+    const view = render(
+      <Media
+        type={null as never}
+        src=""
+        onchainNft={ONCHAIN_NFT}
+        safeSvgVariant="detail"
+        failedPlaceholder={FAILED_PLACEHOLDER}
+      />,
+    );
+
+    expect(await view.findByTestId('media-image')).toBeTruthy();
+    expect(loadOnchainNftArtwork).toHaveBeenCalledWith(ONCHAIN_NFT);
+  });
+
   it('falls back to on-chain artwork when the indexed SVG fails the safe profile', async () => {
     jest.mocked(RNFS.resolveSvg).mockResolvedValue({
       status: 'failed',
