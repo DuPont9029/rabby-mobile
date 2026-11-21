@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ensureWalletUnlockedForAction } from '@/utils/walletUnlock';
 import { KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
 
 import { useMyAccounts } from '@/hooks/account';
@@ -50,6 +49,10 @@ export const useSolanaUnlockPrompt = (
     }
     setUnlocking(true);
     try {
+      // Loaded on demand: it pulls in the native keychain modules.
+      const { ensureWalletUnlockedForAction } = await import(
+        '@/utils/walletUnlock'
+      );
       await ensureWalletUnlockedForAction();
     } catch {
       // Cancelled or failed: the button stays available.
