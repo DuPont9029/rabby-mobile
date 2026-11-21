@@ -303,7 +303,7 @@ export const SolanaTokenDetailScreen = () => {
   };
 
   return (
-    <NormalScreenContainer2024 type="bg1" style={styles.root}>
+    <NormalScreenContainer2024 type="bg1" noHeader style={styles.root}>
       <View style={styles.headerRow}>
         <HeaderBackButton tintColor={colors2024['neutral-title-1']} />
         <View style={styles.headerToken}>
