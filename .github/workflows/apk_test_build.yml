@@ -27,6 +27,8 @@ jobs:
     env:
       RABBY_MOBILE_BUILD_ENV: production
       buildchannel: selfhost
+      # Lets the app find newer builds among the fork's releases.
+      HELIOS_BUILD_SHA: ${{ github.sha }}
       SENTRY_DISABLE_AUTO_UPLOAD: 'true'
     steps:
       - name: Free disk space
@@ -143,7 +145,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="helios-wallet-${GITHUB_SHA::7}"
+          {
+            echo "## Helios Wallet ${GITHUB_SHA::7}"
+            echo
+            git log -1 --pretty='%s%n%n%b' "$GITHUB_SHA" | grep -v '^Co-Authored-By:'
+            echo
+            echo "arm64-v8a, signed with the fork owner's key; updates earlier Helios Wallet builds in place."
+          } > release-notes.md
           gh release create "$tag" "${{ steps.apk.outputs.path }}" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
             --title "helios-wallet (${GITHUB_SHA::7})" \
-            --notes "Helios Wallet: Rabby Mobile with production runtime and icon, plus safe on-chain NFT artwork (feat/onchain-nft-media). arm64-v8a, signed with the key of the fork owner. Package com.debank.rabbymobile.regression: installs next to the official Rabby app and updates earlier fork builds. Unofficial build: no auto-updates."
+            --notes-file release-notes.md

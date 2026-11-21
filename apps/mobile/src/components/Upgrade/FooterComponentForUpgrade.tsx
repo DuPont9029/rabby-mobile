@@ -1,3 +1,8 @@
+import { HELIOS_BUILD_SHA } from '@/utils/heliosReleases';
+import {
+  installDownloadedApk,
+  isApkInstallerAvailable,
+} from '@/core/native/heliosApkInstaller';
 import { useMemo, useCallback, useEffect } from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 // import ApkInstaller from '@isudaji/react-native-install-apk';
@@ -18,7 +23,9 @@ import { toast } from '@/components2024/Toast';
 
 const isAndroid = Platform.OS === 'android';
 
-const UPDATE_IN_APP_ON_ANDROID = false;
+// Helios builds download and install updates from GitHub inside the app.
+const UPDATE_IN_APP_ON_ANDROID =
+  !!HELIOS_BUILD_SHA && isApkInstallerAvailable();
 
 type FooterComponentProps = RNViewProps;
 
@@ -30,7 +37,7 @@ export default function FooterComponentForUpgrade(props: FooterComponentProps) {
   const {
     downloadStage,
     progressPercentText,
-    progressInfo: { downloadResult },
+    progressInfo: { downloadResult, downloadedApkPath },
     startDownload,
     resetProgress,
   } = useDownloadLatestApk();
@@ -96,14 +103,28 @@ export default function FooterComponentForUpgrade(props: FooterComponentProps) {
   const downloadedButton = useMemo(() => {
     return (
       <Button
-        onPress={() => {
-          if (downloadResult?.statusCode === 200) {
-            // ApkInstaller.install(downloadedApkPath);
-            // openExternalUrl(result.targetFilepath);
+        onPress={async () => {
+          if (downloadResult?.statusCode !== 200 || !downloadedApkPath) {
+            toast.info('Download failed, try again');
+            setTimeout(() => resetProgress(), 200);
+            return;
+          }
+          try {
+            const result = await installDownloadedApk(downloadedApkPath);
+            if (result === 'needs_permission') {
+              toast.info(
+                'Allow Helios Wallet to install apps, then tap Install again',
+              );
+              return; // keep the downloaded file and the button
+            }
+          } catch (error) {
+            toast.info(
+              error instanceof Error ? error.message : 'Install failed',
+            );
           }
           setTimeout(() => resetProgress(), 200);
         }}
-        title="Install and Restart"
+        title="Install"
         type="success"
         loadingStyle={{ marginRight: 6 }}
         buttonStyle={[styles.buttonStyle]}
@@ -111,7 +132,7 @@ export default function FooterComponentForUpgrade(props: FooterComponentProps) {
         containerStyle={[styles.btnContainer]}
       />
     );
-  }, [styles, resetProgress, downloadResult]);
+  }, [styles, resetProgress, downloadResult, downloadedApkPath]);
 
   return (
     <View style={[styles.footerWrapper, style]}>

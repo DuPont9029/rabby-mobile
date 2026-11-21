@@ -49,6 +49,7 @@ module.exports = api => {
       buildChannel: resolvedBuildChannel,
       buildEnv: resolvedBuildEnv,
       dotenvEnv: process.env.APP_ENV || '',
+      heliosBuildSha: process.env.HELIOS_BUILD_SHA || '',
       callerName,
       isDevTransform,
       moduleLoadingMode,
@@ -85,6 +86,8 @@ module.exports = api => {
           'process.env.buildchannel': resolvedBuildChannel,
           'process.env.RABBY_MOBILE_FE_SERVICE_URL':
             process.env.RABBY_MOBILE_FE_SERVICE_URL || '',
+          // Commit this build was made from (Helios release update check).
+          'process.env.HELIOS_BUILD_SHA': process.env.HELIOS_BUILD_SHA || '',
         },
       ],
       [

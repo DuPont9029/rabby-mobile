@@ -15,6 +15,7 @@ import {
 import { BUILD_CHANNEL } from '@/constant/env';
 import { UPGRADE_PROMPT_URL } from '@/constant/upgradePrompt';
 import { fetchUpgradePrompt } from '@/utils/upgradePrompt';
+import { HELIOS_BUILD_SHA } from '@/utils/heliosReleases';
 import { APP_URLS, isNonPublicProductionEnv } from '@/constant';
 import { toast } from '@/components2024/Toast';
 import { useUnmountedRef } from './common/useMount';
@@ -65,6 +66,11 @@ export function loadVersionInfoOnBootstrap() {
         !result.finalRemoteInfo?.couldUpgrade ||
         hasUpgradePromptReceipt(result.finalRemoteInfo.version)
       ) {
+        return;
+      }
+      if (HELIOS_BUILD_SHA) {
+        // Helios builds: the "New version" mark in Settings is enough; the
+        // remote prompt config belongs to Rabby's release channel.
         return;
       }
       try {
@@ -182,7 +188,10 @@ export function useDownloadLatestApk() {
       return downloadingPromiseRef.current;
     }
 
+    const remote = remoteVersionStore.getState();
     downloadingPromiseRef.current = downloadLatestApk({
+      // Helios builds: the APK of the newest GitHub release.
+      fromUrl: HELIOS_BUILD_SHA ? remote.downloadUrl || undefined : undefined,
       onProgress: ctx => {
         if (unmountedRef.current) {
           return;

@@ -28,6 +28,7 @@ class MainApplication : Application(), ReactApplication {
               add(RNHelpersPackage())
               add(RNFileHelpersPackage())
               add(RNThreadPackage())
+              add(HeliosApkInstallerPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

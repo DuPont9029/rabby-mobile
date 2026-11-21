@@ -10,6 +10,7 @@ import { devLog } from './logger';
 import { AppBuildChannel, BUILD_CHANNEL } from '@/constant/env';
 import { PROD_APPLICATION_ID, APP_URLS, APP_VERSIONS } from '@/constant';
 import { sleep } from './async';
+import { fetchHeliosUpdate, HELIOS_BUILD_SHA } from './heliosReleases';
 
 export type RemoteVersionRes = {
   version?: string;
@@ -35,11 +36,12 @@ const isProductionChannel = [
   'appstore',
 ].includes(BUILD_CHANNEL);
 
-export const SELF_HOST_BASE_PROD = `https://download.rabby.io/downloads/wallet-mobile`;
+export const SELF_HOST_BASE_PROD =
+  'https://download.rabby.io/downloads/wallet-mobile';
 export const SELF_HOST_BASE = isProductionChannel
   ? SELF_HOST_BASE_PROD
   : `https://download.rabby.io/downloads/${
-      isAndroid ? 'wallet-mobile-reg' : `wallet-mobile-pretest`
+      isAndroid ? 'wallet-mobile-reg' : 'wallet-mobile-pretest'
     }`;
 
 const PROD_RES_BASE_URL = `${SELF_HOST_BASE_PROD}/${
@@ -62,6 +64,8 @@ export type DownloadLatestApkResult = {
   targetUrl: string;
 };
 export async function downloadLatestApk(options?: {
+  /** APK to download (Helios: the GitHub release asset). */
+  fromUrl?: string;
   onProgress?: (ctx: {
     progressPercent: number;
     downloadCallbackRes: RNFS.DownloadProgressCallbackResult;
@@ -71,13 +75,17 @@ export async function downloadLatestApk(options?: {
   const localApkPath = getLatestApkPath();
   const { onProgress } = options || {};
 
+  const fromUrl = options?.fromUrl || ANDROID_DOWNLOAD_LINK;
+  // Start from an empty file: a partial old download must never be installed.
+  await RNFS.unlink(localApkPath).catch(() => undefined);
   const download = RNFS.downloadFile({
-    fromUrl: ANDROID_DOWNLOAD_LINK,
+    fromUrl,
     toFile: localApkPath,
     progress: res => {
-      const progressPercent = Number(
-        (res.bytesWritten / res.contentLength).toFixed(2),
-      );
+      const progressPercent =
+        res.contentLength > 0
+          ? Number((res.bytesWritten / res.contentLength).toFixed(2))
+          : 0;
       console.log('progressPercent', progressPercent);
 
       onProgress?.({
@@ -94,7 +102,7 @@ export async function downloadLatestApk(options?: {
     return {
       downloadResult,
       downloadedApkPath: localApkPath,
-      targetUrl: ANDROID_DOWNLOAD_LINK,
+      targetUrl: fromUrl,
     } as DownloadLatestApkResult;
   });
 }
@@ -103,6 +111,26 @@ export async function getUpgradeInfo(options?: { forceLocalVersion?: string }) {
   // use version from package.json on devlopment
   const localVersion =
     options?.forceLocalVersion || APP_VERSIONS.forCheckUpgrade;
+
+  // Helios Wallet builds update from the fork's GitHub releases.
+  if (HELIOS_BUILD_SHA) {
+    const update = await fetchHeliosUpdate();
+    const finalRemoteInfo: MergedRemoteVersion = {
+      version: update?.latestTag || `helios-wallet-${HELIOS_BUILD_SHA}`,
+      downloadUrl: update?.apkUrl || update?.releaseUrl || '',
+      externalUrlToOpen: update?.apkUrl || update?.releaseUrl || '',
+      storeUrl: update?.releaseUrl || null,
+      source: BUILD_CHANNEL,
+      couldUpgrade: !!update?.couldUpgrade,
+      changelog: update?.changelog || '',
+    };
+    return {
+      localVersion: `${localVersion} · ${HELIOS_BUILD_SHA}`,
+      storeVersion: null,
+      selfHostUpgrade: {} as RemoteVersionRes,
+      finalRemoteInfo,
+    };
+  }
 
   // allow store check failed, fallback to compare with version.json
   const storeVersion = await Promise.race([
@@ -185,7 +213,9 @@ export async function getUpgradeInfo(options?: { forceLocalVersion?: string }) {
           channelMdRes.value.status === 200
             ? channelMdRes.value.text()
             : '';
-        if (channelMd) return channelMd;
+        if (channelMd) {
+          return channelMd;
+        }
 
         if (prodMdRes.status === 'fulfilled') {
           const prodMd =
@@ -194,7 +224,9 @@ export async function getUpgradeInfo(options?: { forceLocalVersion?: string }) {
               : prodMdRes.value.status === 200
               ? prodMdRes.value.text()
               : '';
-          if (prodMd) return prodMd;
+          if (prodMd) {
+            return prodMd;
+          }
         }
 
         return '';
