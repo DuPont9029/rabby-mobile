@@ -1,3 +1,4 @@
+import { BridgeWatcher } from '@/core/bridge/wormhole/BridgeWatcher';
 import { RoundedFontStyles } from '@/core/utils/fonts';
 import { createCustomNativeStackNavigator as createNativeStackNavigator } from '@/utils/CustomNativeStackNavigator';
 import {
@@ -49,6 +50,7 @@ import {
   SolanaHomeScreen,
   SolanaNftDetailScreen,
   SolanaSendScreen,
+  WormholeBridgeScreen,
   TokenDetailScreen,
   TokenMarketInfoScreen,
 } from '@/perfs/loadables/screens';
@@ -399,6 +401,8 @@ function AppNavigationOverlayGlobals({
       <ScreenshotFeedbackHost />
       <FeedbackHistoryHost />
       {postUnlockGlobalsEnabled && <ToggleCollateralModal />}
+      {/* ETH → Solana (Wormhole) transfers finish in the background. */}
+      {postUnlockGlobalsEnabled && <BridgeWatcher />}
 
       {/** @warning put all business stub components before this modal */}
       {deferredGlobalsEnabled && <GlobalSecurityTipStubModal />}
@@ -800,6 +804,19 @@ export default function AppNavigation() {
                     options={mergeScreenOptions({
                       headerShown: true,
                       headerTitle: 'Solana',
+                      headerTransparent: false,
+                      headerShadowVisible: false,
+                      headerStyle: {
+                        backgroundColor: colors['neutral-bg1'],
+                      },
+                    })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.WormholeBridge}
+                    component={WormholeBridgeScreen}
+                    options={mergeScreenOptions({
+                      headerShown: true,
+                      headerTitle: 'ETH → Solana',
                       headerTransparent: false,
                       headerShadowVisible: false,
                       headerStyle: {

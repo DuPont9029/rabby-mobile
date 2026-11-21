@@ -10,4 +10,5 @@ export { default as NotFoundScreen } from '@/screens/NotFound';
 export { default as MyBundleScreen } from '@/screens/Assets/MyBundle';
 export { SolanaHomeScreen } from '@/screens/Solana/SolanaHomeScreen';
 export { SolanaSendScreen } from '@/screens/Solana/SolanaSendScreen';
+export { WormholeBridgeScreen } from '@/screens/Solana/WormholeBridgeScreen';
 export { SolanaNftDetailScreen } from '@/screens/Solana/SolanaNftDetailScreen';

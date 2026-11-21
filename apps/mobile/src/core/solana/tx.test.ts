@@ -189,3 +189,55 @@ describe('Solana messages', () => {
     expect(decodeAddress(BLOCKHASH)).toHaveLength(32);
   });
 });
+
+describe('multi-signer transactions', () => {
+  const { compileMessage: compile, signTransactionWithSigners } =
+    require('./tx') as typeof import('./tx');
+  const keys = require('./keys') as typeof import('./keys');
+  const seedA = new Uint8Array(32).fill(1);
+  const seedB = new Uint8Array(32).fill(2);
+  const a = keys.encodeAddress(keys.publicKeyFromPrivateKey(seedA));
+  const b = keys.encodeAddress(keys.publicKeyFromPrivateKey(seedB));
+  const message = compile({
+    feePayer: a,
+    recentBlockhash: '11111111111111111111111111111111',
+    instructions: [
+      {
+        programId: 'worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth',
+        keys: [
+          { pubkey: a, isSigner: true, isWritable: true },
+          { pubkey: b, isSigner: true, isWritable: true },
+        ],
+        data: Uint8Array.of(7),
+      },
+    ],
+  });
+
+  it('signs with every required signer in account order', () => {
+    const wire = signTransactionWithSigners(message, [
+      { address: b, privateKey: seedB },
+      { address: a, privateKey: seedA },
+    ]);
+    expect(wire[0]).toBe(2);
+    const sigA = wire.subarray(1, 65);
+    const sigB = wire.subarray(65, 129);
+    expect(
+      keys.verifySignature(sigA, message.bytes, keys.decodeAddress(a)),
+    ).toBe(true);
+    expect(
+      keys.verifySignature(sigB, message.bytes, keys.decodeAddress(b)),
+    ).toBe(true);
+  });
+
+  it('refuses a missing or foreign signer', () => {
+    expect(() =>
+      signTransactionWithSigners(message, [{ address: a, privateKey: seedA }]),
+    ).toThrow();
+    expect(() =>
+      signTransactionWithSigners(message, [
+        { address: a, privateKey: seedA },
+        { address: a, privateKey: seedB },
+      ]),
+    ).toThrow();
+  });
+});

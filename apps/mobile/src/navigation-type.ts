@@ -84,6 +84,7 @@ export type RootStackParamsList = {
   [RootNames.StackTestkits]: NavigatorScreenParams<TestKitsNavigatorParamsList>;
   [RootNames.SolanaHome]: SolanaScreenParams['SolanaHome'];
   [RootNames.SolanaSend]: SolanaScreenParams['SolanaSend'];
+  [RootNames.WormholeBridge]: SolanaScreenParams['WormholeBridge'];
   [RootNames.SolanaNftDetail]: SolanaScreenParams['SolanaNftDetail'];
   [RootNames.NftDetail]: {
     token: NFTItem | TransferingNFTItem | TokenItem | TokenItem[];

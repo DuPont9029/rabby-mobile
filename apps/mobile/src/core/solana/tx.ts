@@ -407,6 +407,34 @@ export const signTransaction = (
   return wire;
 };
 
+/**
+ * Signs a compiled message that needs several signers (e.g. the wallet and a
+ * one-time account keypair). Every required signer must be provided; they
+ * are placed in the message's account order.
+ */
+export const signTransactionWithSigners = (
+  message: CompiledMessage,
+  signers: Array<{ address: string; privateKey: Uint8Array }>,
+): Uint8Array => {
+  const required = message.accountKeys.slice(0, message.numRequiredSignatures);
+  const byAddress = new Map(signers.map(signer => [signer.address, signer]));
+  if (
+    byAddress.size !== signers.length ||
+    signers.length !== required.length ||
+    required.some(address => !byAddress.has(address))
+  ) {
+    throw new Error('signers do not match the transaction');
+  }
+  const signatures = required.map(address =>
+    signMessage(message.bytes, byAddress.get(address)!.privateKey),
+  );
+  const wire = concat(shortVec(required.length), ...signatures, message.bytes);
+  if (wire.length > PACKET_DATA_SIZE) {
+    throw new Error('transaction too large');
+  }
+  return wire;
+};
+
 /** Wire format with an empty signature, for `simulateTransaction`. */
 export const unsignedTransaction = (message: CompiledMessage) =>
   concat(

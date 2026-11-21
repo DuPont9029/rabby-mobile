@@ -203,6 +203,17 @@ export const SolanaHomeScreen = () => {
             onPress={() => setShowQr(value => !value)}
           />
         </View>
+        <Button
+          height={44}
+          type="ghost"
+          title={t('page.solana.bridgeFromEth', {
+            defaultValue: 'Bridge ETH from Ethereum →',
+          })}
+          disabled={!evmAddress}
+          onPress={() =>
+            evmAddress && naviPush(RootNames.WormholeBridge, { evmAddress })
+          }
+        />
         {showQr && solanaAddress ? (
           <View style={styles.qr}>
             <View style={styles.qrBox}>

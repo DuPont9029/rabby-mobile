@@ -75,6 +75,16 @@ export const SolanaSendScreen = registerAppScreen<
   name: RootNames.SolanaSend,
 });
 
+export const WormholeBridgeScreen = registerAppScreen<
+  typeof import('@/screens/Solana/WormholeBridgeScreen').WormholeBridgeScreen
+>({
+  loader: () =>
+    import('@/screens/Solana/WormholeBridgeScreen').then(m => ({
+      default: m.WormholeBridgeScreen,
+    })),
+  name: RootNames.WormholeBridge,
+});
+
 export const SolanaNftDetailScreen = registerAppScreen<
   typeof import('@/screens/Solana/SolanaNftDetailScreen').SolanaNftDetailScreen
 >({
