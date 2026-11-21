@@ -173,6 +173,7 @@ const findAccountIndex = (
 
 const KEYRING_READY_ATTEMPTS = 8;
 const KEYRING_RETRY_MS = 400;
+const KEYRING_READY_TIMEOUT_MS = 4_000;
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 type KeyringLookup =
@@ -197,8 +198,12 @@ const lookupKeyring = async (evmAddress: string): Promise<KeyringLookup> => {
   }
   try {
     // After unlock the full keyring is built lazily; until then only the
-    // public account list exists and no keyring holds the address.
-    await ensureKeyringRuntimeReadyForApi('solana');
+    // public account list exists and no keyring holds the address. Never
+    // wait on it forever: the caller retries.
+    await Promise.race([
+      ensureKeyringRuntimeReadyForApi('solana'),
+      sleep(KEYRING_READY_TIMEOUT_MS),
+    ]);
   } catch {
     // Retried by the caller.
   }

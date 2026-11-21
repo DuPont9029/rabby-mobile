@@ -170,6 +170,18 @@ export const SolanaHomeScreen = () => {
                   })
             } (${accountState.reason})`}
           </Text>
+        ) : accountState.status === 'loading' && accountState.reason ? (
+          <Text style={styles.muted}>
+            {accountState.reason === 'locked'
+              ? t('page.solana.waitingUnlock', {
+                  defaultValue:
+                    'The wallet is locked. Unlock it (e.g. open Settings or sign anything) and the Solana address appears here.',
+                })
+              : t('page.solana.waitingKeys', {
+                  defaultValue: 'Loading the wallet keys… (retrying)',
+                })}
+            {` (${accountState.reason})`}
+          </Text>
         ) : (
           <Text style={styles.address} selectable>
             {solanaAddress || '…'}

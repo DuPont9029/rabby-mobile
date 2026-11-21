@@ -22,12 +22,15 @@ export const useSolanaHdAccounts = () => {
 };
 
 export type LoadState<T> =
-  | { status: 'loading' }
+  /** `reason`: why it is still waiting (retrying), e.g. `locked`. */
+  | { status: 'loading'; reason?: string }
   | { status: 'ready'; value: T }
   | { status: 'error'; reason: string };
 
 /** Retries for keyring-loading states, then every 5 s while the screen lives. */
 const ACCOUNT_RETRY_DELAYS_MS = [500, 1_000, 2_000, 3_000, 5_000];
+/** One derivation attempt never blocks the screen longer than this. */
+const ACCOUNT_ATTEMPT_TIMEOUT_MS = 20_000;
 
 export const useSolanaAccount = (evmAddress?: string) => {
   const [state, setState] = useState<LoadState<SolanaAccount>>({
@@ -51,7 +54,15 @@ export const useSolanaAccount = (evmAddress?: string) => {
       // Accounts still loading: not an error.
       return;
     }
-    getSolanaAccount(evmAddress)
+    Promise.race([
+      getSolanaAccount(evmAddress),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new SolanaAccountError('not_ready')),
+          ACCOUNT_ATTEMPT_TIMEOUT_MS,
+        ),
+      ),
+    ])
       .then(account => active && setState({ status: 'ready', value: account }))
       .catch(error => {
         if (!active) {
@@ -72,7 +83,9 @@ export const useSolanaAccount = (evmAddress?: string) => {
           timer = setTimeout(() => setAttempt(value => value + 1), delay);
           // Keep showing the cached address while retrying.
           setState(previous =>
-            previous.status === 'ready' ? previous : { status: 'loading' },
+            previous.status === 'ready'
+              ? previous
+              : { status: 'loading', reason },
           );
           return;
         }
