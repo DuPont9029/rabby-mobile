@@ -3,18 +3,32 @@ import HdKeyring from '@rabby-wallet/eth-hd-keyring';
 import vectors from './__fixtures__/reference-vectors.json';
 import {
   __resetSolanaAccountCacheForTests,
+  getCachedSolanaAccount,
   getSolanaAccount,
   SolanaAccountError,
   withSolanaSigner,
 } from './account';
 import {
+  ensureKeyringRuntimeReadyForApi,
   getKeyringInstancesSnapshot,
+  isKeyringUnlockedSnapshot,
   keyringServiceApi,
 } from '@/core/serviceApi/keyring';
 
 jest.mock('@/core/serviceApi/keyring', () => ({
   keyringServiceApi: { getKeyringForAccount: jest.fn() },
   getKeyringInstancesSnapshot: jest.fn(() => []),
+  isKeyringUnlockedSnapshot: jest.fn(() => true),
+  ensureKeyringRuntimeReadyForApi: jest.fn(async () => undefined),
+}));
+
+const mockStore = new Map<string, unknown>();
+jest.mock('@/core/storage/mmkv', () => ({
+  appJsonStore: {
+    getItem: (key: string, fallback: unknown) =>
+      mockStore.has(key) ? mockStore.get(key) : fallback,
+    setItem: (key: string, value: unknown) => mockStore.set(key, value),
+  },
 }));
 
 const MNEMONIC =
@@ -38,7 +52,10 @@ const reasonOf = async (promise: Promise<unknown>) => {
 describe('Solana accounts derived from HD keyrings', () => {
   beforeEach(() => {
     __resetSolanaAccountCacheForTests();
+    mockStore.clear();
     jest.clearAllMocks();
+    jest.mocked(isKeyringUnlockedSnapshot).mockReturnValue(true);
+    jest.mocked(getKeyringInstancesSnapshot).mockReturnValue([]);
   });
 
   it('pairs EVM account #i with the Phantom Solana account #i', async () => {
@@ -83,15 +100,75 @@ describe('Solana accounts derived from HD keyrings', () => {
     expect(await reasonOf(getSolanaAccount(first))).toBe('seed_mismatch');
   });
 
-  it('rejects addresses that are not seed-phrase accounts', async () => {
+  it('rejects addresses held by a non seed-phrase keyring', async () => {
+    const address = '0x0000000000000000000000000000000000000001';
+    jest
+      .mocked(getKeyringInstancesSnapshot)
+      .mockReturnValue([
+        { type: 'Simple Key Pair', accounts: [address] },
+      ] as never);
+    expect(await reasonOf(getSolanaAccount(address))).toBe('not_hd_account');
+  });
+
+  it('reports a keyring that is still loading as not ready, not as "not a seed wallet"', async () => {
+    jest.useFakeTimers();
+    try {
+      jest
+        .mocked(keyringServiceApi.getKeyringForAccount)
+        .mockRejectedValue(new Error('no keyring'));
+      const pending = reasonOf(
+        getSolanaAccount('0x0000000000000000000000000000000000000001'),
+      );
+      await jest.runAllTimersAsync();
+      expect(await pending).toBe('not_ready');
+      expect(ensureKeyringRuntimeReadyForApi).toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('waits for the keyring runtime instead of failing during unlock', async () => {
+    const keyring = await makeKeyring();
+    const [first] = await keyring.getAccounts();
+    // The keyring appears only after the runtime finished loading.
+    jest
+      .mocked(ensureKeyringRuntimeReadyForApi)
+      .mockImplementationOnce(async () => {
+        jest
+          .mocked(getKeyringInstancesSnapshot)
+          .mockReturnValue([keyring] as never);
+      });
+    await expect(getSolanaAccount(first)).resolves.toMatchObject({
+      address: vectors.derivation[0].address,
+    });
+  });
+
+  it('reports a locked wallet as locked', async () => {
+    jest.useFakeTimers();
+    try {
+      jest.mocked(isKeyringUnlockedSnapshot).mockReturnValue(false);
+      const pending = reasonOf(
+        getSolanaAccount('0x0000000000000000000000000000000000000001'),
+      );
+      await jest.runAllTimersAsync();
+      expect(await pending).toBe('locked');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('remembers the public Solana address for the next start', async () => {
+    const keyring = await makeKeyring();
     jest
       .mocked(keyringServiceApi.getKeyringForAccount)
-      .mockRejectedValue(new Error('no keyring'));
-    expect(
-      await reasonOf(
-        getSolanaAccount('0x0000000000000000000000000000000000000001'),
-      ),
-    ).toBe('not_hd_account');
+      .mockResolvedValue(keyring as never);
+    const [first] = await keyring.getAccounts();
+    await getSolanaAccount(first);
+    __resetSolanaAccountCacheForTests();
+    expect(getCachedSolanaAccount(first)).toMatchObject({
+      index: 0,
+      address: vectors.derivation[0].address,
+    });
   });
 
   it('hands out the private key only inside the signer, then wipes it', async () => {

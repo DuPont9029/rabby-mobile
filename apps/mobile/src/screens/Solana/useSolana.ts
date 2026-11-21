@@ -3,7 +3,9 @@ import { KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
 
 import { useMyAccounts } from '@/hooks/account';
 import {
+  getCachedSolanaAccount,
   getSolanaAccount,
+  isTransientSolanaAccountError,
   SolanaAccount,
   SolanaAccountError,
 } from '@/core/solana/account';
@@ -24,35 +26,65 @@ export type LoadState<T> =
   | { status: 'ready'; value: T }
   | { status: 'error'; reason: string };
 
+/** Retries for keyring-loading states, then every 5 s while the screen lives. */
+const ACCOUNT_RETRY_DELAYS_MS = [500, 1_000, 2_000, 3_000, 5_000];
+
 export const useSolanaAccount = (evmAddress?: string) => {
   const [state, setState] = useState<LoadState<SolanaAccount>>({
     status: 'loading',
   });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    setAttempt(0);
+    // Show the address derived before right away (public data only).
+    const cached = evmAddress ? getCachedSolanaAccount(evmAddress) : null;
+    setState(
+      cached ? { status: 'ready', value: cached } : { status: 'loading' },
+    );
+  }, [evmAddress]);
+
   useEffect(() => {
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (!evmAddress) {
-      setState({ status: 'error', reason: 'not_hd_account' });
+      // Accounts still loading: not an error.
       return;
     }
-    setState({ status: 'loading' });
     getSolanaAccount(evmAddress)
       .then(account => active && setState({ status: 'ready', value: account }))
       .catch(error => {
-        if (active) {
-          const reason =
-            error instanceof SolanaAccountError
-              ? error.reason
-              : `unknown: ${
-                  error instanceof Error ? error.message : String(error)
-                }`;
-          console.warn('[solana] account derivation failed', reason);
-          setState({ status: 'error', reason });
+        if (!active) {
+          return;
         }
+        const reason =
+          error instanceof SolanaAccountError
+            ? error.reason
+            : `unknown: ${
+                error instanceof Error ? error.message : String(error)
+              }`;
+        console.warn('[solana] account derivation failed', reason);
+        if (isTransientSolanaAccountError(reason)) {
+          const delay =
+            ACCOUNT_RETRY_DELAYS_MS[
+              Math.min(attempt, ACCOUNT_RETRY_DELAYS_MS.length - 1)
+            ];
+          timer = setTimeout(() => setAttempt(value => value + 1), delay);
+          // Keep showing the cached address while retrying.
+          setState(previous =>
+            previous.status === 'ready' ? previous : { status: 'loading' },
+          );
+          return;
+        }
+        setState({ status: 'error', reason });
       });
     return () => {
       active = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
-  }, [evmAddress]);
+  }, [evmAddress, attempt]);
   return state;
 };
 

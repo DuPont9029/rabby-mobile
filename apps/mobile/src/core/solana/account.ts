@@ -18,9 +18,12 @@ import { bytesToHex } from '@noble/hashes/utils';
 import { KEYRING_CLASS } from '@rabby-wallet/keyring-utils';
 
 import {
+  ensureKeyringRuntimeReadyForApi,
   getKeyringInstancesSnapshot,
+  isKeyringUnlockedSnapshot,
   keyringServiceApi,
 } from '@/core/serviceApi/keyring';
+import { appJsonStore } from '@/core/storage/mmkv';
 import { mnemonicToSeedSync } from '@scure/bip39';
 import {
   deriveEd25519PrivateKey,
@@ -68,7 +71,13 @@ export type SolanaAccountErrorReason =
   | 'not_hd_account'
   | 'seed_mismatch'
   | 'locked'
-  | 'key_mismatch';
+  | 'key_mismatch'
+  /** The keyring is still loading after unlock: retry shortly. */
+  | 'not_ready';
+
+/** Reasons that can go away on their own (the UI retries them). */
+export const isTransientSolanaAccountError = (reason: string) =>
+  reason === 'not_ready' || reason === 'locked';
 
 export class SolanaAccountError extends Error {
   constructor(readonly reason: SolanaAccountErrorReason) {
@@ -162,36 +171,85 @@ const findAccountIndex = (
   }
 };
 
-/** The live HD keyring instance that holds `evmAddress`. */
-const loadKeyring = async (
-  evmAddress: string,
-): Promise<HdKeyringLike | null> => {
-  const target = evmAddress.toLowerCase();
-  const holds = (keyring?: HdKeyringLike | null) =>
-    !!keyring &&
-    keyring.type === KEYRING_CLASS.MNEMONIC &&
-    Array.isArray(keyring.accounts) &&
-    keyring.accounts.some(account => account?.toLowerCase() === target);
-  let fromSnapshot: HdKeyringLike | null = null;
-  try {
-    fromSnapshot =
-      (getKeyringInstancesSnapshot() as unknown as HdKeyringLike[]).find(
-        holds,
-      ) || null;
-  } catch {
-    // Snapshot not available yet: ask the service below.
+const KEYRING_READY_ATTEMPTS = 8;
+const KEYRING_RETRY_MS = 400;
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+type KeyringLookup =
+  | { status: 'hd'; keyring: HdKeyringLike }
+  /** The address lives in another kind of keyring (private key, hardware). */
+  | { status: 'other' }
+  | { status: 'locked' }
+  /** Not found (yet): the keyring may still be loading. */
+  | { status: 'missing' };
+
+const holdsAddress = (
+  keyring: HdKeyringLike | null | undefined,
+  target: string,
+) =>
+  !!keyring &&
+  Array.isArray(keyring.accounts) &&
+  keyring.accounts.some(account => account?.toLowerCase() === target);
+
+const lookupKeyring = async (evmAddress: string): Promise<KeyringLookup> => {
+  if (!isKeyringUnlockedSnapshot()) {
+    return { status: 'locked' };
   }
-  if (fromSnapshot?.mnemonic) {
-    return fromSnapshot;
+  try {
+    // After unlock the full keyring is built lazily; until then only the
+    // public account list exists and no keyring holds the address.
+    await ensureKeyringRuntimeReadyForApi('solana');
+  } catch {
+    // Retried by the caller.
+  }
+  const target = evmAddress.toLowerCase();
+  let keyrings: HdKeyringLike[] = [];
+  try {
+    keyrings = getKeyringInstancesSnapshot() as unknown as HdKeyringLike[];
+  } catch {
+    keyrings = [];
+  }
+  const owner = keyrings.find(keyring => holdsAddress(keyring, target));
+  if (owner && owner.type === KEYRING_CLASS.MNEMONIC && owner.mnemonic) {
+    return { status: 'hd', keyring: owner };
+  }
+  if (owner && owner.type !== KEYRING_CLASS.MNEMONIC) {
+    return { status: 'other' };
   }
   try {
     const keyring = (await keyringServiceApi.getKeyringForAccount(
       evmAddress,
       KEYRING_CLASS.MNEMONIC,
     )) as unknown as HdKeyringLike;
-    return keyring || fromSnapshot;
+    if (keyring?.mnemonic && holdsAddress(keyring, target)) {
+      return { status: 'hd', keyring };
+    }
   } catch {
-    return fromSnapshot;
+    // Not (yet) found by the service either.
+  }
+  return { status: 'missing' };
+};
+
+/**
+ * The live HD keyring instance that holds `evmAddress`. Waits briefly for the
+ * keyring to finish loading instead of reporting "not a seed wallet" during
+ * that window.
+ */
+const loadKeyring = async (evmAddress: string): Promise<HdKeyringLike> => {
+  for (let attempt = 0; ; attempt += 1) {
+    const result = await lookupKeyring(evmAddress);
+    if (result.status === 'hd') {
+      return result.keyring;
+    }
+    if (result.status === 'other') {
+      throw new SolanaAccountError('not_hd_account');
+    }
+    if (attempt + 1 >= KEYRING_READY_ATTEMPTS) {
+      throw new SolanaAccountError(
+        result.status === 'locked' ? 'locked' : 'not_ready',
+      );
+    }
+    await sleep(KEYRING_RETRY_MS);
   }
 };
 
@@ -219,11 +277,8 @@ const withVerifiedSeed = async <T>(
   ) => T extends Promise<unknown> ? never : T,
 ): Promise<T> => {
   const keyring = await loadKeyring(evmAddress);
-  if (!keyring) {
-    throw new SolanaAccountError('not_hd_account');
-  }
   if (!keyring.mnemonic) {
-    throw new SolanaAccountError('locked');
+    throw new SolanaAccountError('not_ready');
   }
   let hint: { index?: number; hdPath?: string } = {};
   try {
@@ -251,6 +306,59 @@ const withVerifiedSeed = async <T>(
 };
 
 const addressCache = new Map<string, SolanaAccount>();
+const PUBLIC_CACHE_KEY = 'helios:solanaPublicAccounts:v1';
+
+/**
+ * Solana accounts derived before (public data only: address and index), so
+ * balances can show while the keyring is still loading. Signing always
+ * re-derives and re-checks the key.
+ */
+export const getCachedSolanaAccount = (
+  evmAddress: string,
+): SolanaAccount | null => {
+  const key = evmAddress.toLowerCase();
+  const inMemory = addressCache.get(key);
+  if (inMemory) {
+    return inMemory;
+  }
+  try {
+    const all = appJsonStore.getItem(PUBLIC_CACHE_KEY, null) as Record<
+      string,
+      { index?: unknown; address?: unknown }
+    > | null;
+    const entry = all?.[key];
+    if (
+      entry &&
+      typeof entry.address === 'string' &&
+      /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(entry.address) &&
+      typeof entry.index === 'number' &&
+      Number.isInteger(entry.index) &&
+      entry.index >= 0
+    ) {
+      return { evmAddress: key, index: entry.index, address: entry.address };
+    }
+  } catch {
+    // Ignore a damaged cache.
+  }
+  return null;
+};
+
+const rememberSolanaAccount = (account: SolanaAccount) => {
+  addressCache.set(account.evmAddress, account);
+  try {
+    const all =
+      (appJsonStore.getItem(PUBLIC_CACHE_KEY, null) as Record<
+        string,
+        unknown
+      > | null) || {};
+    appJsonStore.setItem(PUBLIC_CACHE_KEY, {
+      ...all,
+      [account.evmAddress]: { index: account.index, address: account.address },
+    });
+  } catch {
+    // The cache is only a speed-up.
+  }
+};
 
 /** The Solana account paired with a seed-phrase EVM account. */
 export const getSolanaAccount = async (
@@ -273,7 +381,7 @@ export const getSolanaAccount = async (
       privateKey.fill(0);
     }
   });
-  addressCache.set(key, account);
+  rememberSolanaAccount(account);
   return account;
 };
 
