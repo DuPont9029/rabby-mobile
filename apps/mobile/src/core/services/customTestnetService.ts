@@ -148,7 +148,7 @@ export class CustomTestnetService extends StoreServiceBase<
         return {
           error: {
             key: 'id',
-            message: 'Chain already integrated by Rabby Wallet',
+            message: 'Chain already integrated by Helios Wallet',
             status: 'alreadySupported',
           },
         };
