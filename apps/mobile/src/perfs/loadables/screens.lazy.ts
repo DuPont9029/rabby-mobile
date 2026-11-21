@@ -95,6 +95,16 @@ export const SolanaTokenDetailScreen = registerAppScreen<
   name: RootNames.SolanaTokenDetail,
 });
 
+export const ContractInteractScreen = registerAppScreen<
+  typeof import('@/screens/Contracts/ContractInteractScreen').ContractInteractScreen
+>({
+  loader: () =>
+    import('@/screens/Contracts/ContractInteractScreen').then(m => ({
+      default: m.ContractInteractScreen,
+    })),
+  name: RootNames.ContractInteract,
+});
+
 export const SolanaNftDetailScreen = registerAppScreen<
   typeof import('@/screens/Solana/SolanaNftDetailScreen').SolanaNftDetailScreen
 >({

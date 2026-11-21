@@ -11,6 +11,7 @@ import RcIconSendCC from '@/assets2024/icons/home/IconSendCC.svg';
 import RcIconSwapCC from '@/assets2024/icons/home/IconSwapCC.svg';
 import RcIconMarketCC from '@/assets2024/icons/home/IconMarketCC.svg';
 import RcIconNftCC from '@/assets2024/icons/home/IconNftCC.svg';
+import RcIconContractCC from '@/assets2024/icons/home/IconContractCC.svg';
 import RcIconConvertDustCC from '@/assets2024/icons/home/IconDustCC.svg';
 import RcIconMemeCoinCC from '@/assets2024/icons/home/IconMemeCoinCC.svg';
 
@@ -975,6 +976,13 @@ export const HomeOverview = React.memo(() => {
           icon: RcIconNftCC,
         },
         {
+          key: MultiHomeFeatTitle.Contracts,
+          title: t('page.home.services.contracts', {
+            defaultValue: 'Contracts',
+          }),
+          icon: RcIconContractCC,
+        },
+        {
           key: MultiHomeFeatTitle.Perps,
           title: t('page.home.services.perps'),
           icon: RcIconPerps,
@@ -1301,6 +1309,9 @@ export const HomeOverview = React.memo(() => {
               params: {},
             }),
           );
+          break;
+        case MultiHomeFeatTitle.Contracts:
+          navigation.dispatch(StackActions.push(RootNames.ContractInteract));
           break;
         case MultiHomeFeatTitle.Solana:
           navigation.dispatch(StackActions.push(RootNames.SolanaHome));

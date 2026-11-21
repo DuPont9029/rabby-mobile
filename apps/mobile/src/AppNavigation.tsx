@@ -52,6 +52,7 @@ import {
   SolanaSendScreen,
   WormholeBridgeScreen,
   SolanaTokenDetailScreen,
+  ContractInteractScreen,
   TokenDetailScreen,
   TokenMarketInfoScreen,
 } from '@/perfs/loadables/screens';
@@ -805,6 +806,19 @@ export default function AppNavigation() {
                     options={mergeScreenOptions({
                       headerShown: true,
                       headerTitle: 'Solana',
+                      headerTransparent: false,
+                      headerShadowVisible: false,
+                      headerStyle: {
+                        backgroundColor: colors['neutral-bg1'],
+                      },
+                    })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.ContractInteract}
+                    component={ContractInteractScreen}
+                    options={mergeScreenOptions({
+                      headerShown: true,
+                      headerTitle: 'Contracts',
                       headerTransparent: false,
                       headerShadowVisible: false,
                       headerStyle: {

@@ -12,4 +12,5 @@ export { SolanaHomeScreen } from '@/screens/Solana/SolanaHomeScreen';
 export { SolanaSendScreen } from '@/screens/Solana/SolanaSendScreen';
 export { WormholeBridgeScreen } from '@/screens/Solana/WormholeBridgeScreen';
 export { SolanaTokenDetailScreen } from '@/screens/Solana/SolanaTokenDetailScreen';
+export { ContractInteractScreen } from '@/screens/Contracts/ContractInteractScreen';
 export { SolanaNftDetailScreen } from '@/screens/Solana/SolanaNftDetailScreen';
