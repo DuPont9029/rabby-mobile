@@ -46,6 +46,16 @@ type ReceiveAddressCardProps = {
   safeChains?: Chain[];
   showAddress?: boolean;
   showQr?: boolean;
+  /**
+   * Solana receiving for seed-phrase accounts: an EVM | Solana switch. When
+   * Solana is active, the QR code, address and copy use `address`.
+   */
+  solana?: {
+    available: boolean;
+    active: boolean;
+    address?: string;
+    onChange: (active: boolean) => void;
+  };
 };
 
 export function ReceiveAddressCard({
@@ -56,18 +66,23 @@ export function ReceiveAddressCard({
   safeChains = EMPTY_CHAINS,
   showAddress = true,
   showQr = true,
+  solana,
 }: ReceiveAddressCardProps) {
   const { t } = useTranslation();
   const { styles, colors2024 } = useTheme2024({ getStyle });
   const isSafe = account.type === KEYRING_TYPE.GnosisKeyring;
+  const solanaActive = !!solana?.available && !!solana.active;
+  // While the Solana address is being derived nothing is shown (never the
+  // EVM address under a Solana label).
+  const shownAddress = solanaActive ? solana?.address || '' : account.address;
   const [addressLayout, setAddressLayout] = useState<{
     address: string;
     firstLineLength: number;
   } | null>(null);
   const firstLineLength =
-    addressLayout?.address === account.address
+    addressLayout?.address === shownAddress
       ? addressLayout.firstLineLength
-      : account.address.length - 14;
+      : shownAddress.length - 14;
 
   const mainnetList = useMainnetChainList();
   const displayChains = useMemo(
@@ -87,16 +102,16 @@ export function ReceiveAddressCard({
   }, [selectedChain, displayChains]);
 
   const addressSplit = useMemo(() => {
-    if (!account?.address) {
+    if (!shownAddress) {
       return [];
     }
-    const prefix = account.address.slice(0, 8);
-    const firstLineMiddle = account.address.slice(8, firstLineLength);
-    const secondLineMiddle = account.address.slice(firstLineLength, -6);
-    const suffix = account.address.slice(-6);
+    const prefix = shownAddress.slice(0, 8);
+    const firstLineMiddle = shownAddress.slice(8, firstLineLength);
+    const secondLineMiddle = shownAddress.slice(firstLineLength, -6);
+    const suffix = shownAddress.slice(-6);
 
     return [prefix, firstLineMiddle, secondLineMiddle, suffix];
-  }, [account.address, firstLineLength]);
+  }, [shownAddress, firstLineLength]);
   const handleSelectChain = () => {
     const id = createGlobalBottomSheetModal2024({
       name: MODAL_NAMES.SELECT_CHAIN_WITH_SUMMARY,
@@ -171,15 +186,50 @@ export function ReceiveAddressCard({
   return (
     <View style={styles.qrCard}>
       <Text style={styles.qrCardHeader}>{t('page.receive.newTitle')}</Text>
-      <Button
-        titleStyle={styles.selectChainText}
-        title={chainUI}
-        buttonStyle={styles.selectChain}
-        onPress={handleSelectChain}
-      />
+      {solana?.available ? (
+        <View style={styles.networkSwitch} testID="receive-network-switch">
+          {(['evm', 'solana'] as const).map(network => {
+            const selected = (network === 'solana') === solanaActive;
+            return (
+              <Pressable
+                key={network}
+                onPress={() => solana.onChange(network === 'solana')}
+                accessibilityState={{ selected }}
+                style={[
+                  styles.networkOption,
+                  selected && styles.networkOptionOn,
+                ]}>
+                <Text
+                  style={[
+                    styles.networkOptionText,
+                    selected && styles.networkOptionTextOn,
+                  ]}>
+                  {network === 'evm' ? 'EVM' : 'Solana'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+      {solanaActive ? (
+        <View style={styles.selectChain}>
+          <Text style={[styles.selectChainText, styles.selectChainName]}>
+            {t('page.receive.solanaNetwork', {
+              defaultValue: 'Solana (SOL and SPL tokens)',
+            })}
+          </Text>
+        </View>
+      ) : (
+        <Button
+          titleStyle={styles.selectChainText}
+          title={chainUI}
+          buttonStyle={styles.selectChain}
+          onPress={handleSelectChain}
+        />
+      )}
       <View style={styles.qrCardCode}>
-        {account?.address && showQr ? (
-          <QRCode value={account.address} size={QR_CODE_SIZE} />
+        {shownAddress && showQr ? (
+          <QRCode value={shownAddress} size={QR_CODE_SIZE} />
         ) : (
           <View style={styles.qrCodePlaceholder} />
         )}
@@ -194,7 +244,7 @@ export function ReceiveAddressCard({
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants">
               <Text
-                key={account.address}
+                key={shownAddress}
                 style={styles.qrCardAddress}
                 onTextLayout={({ nativeEvent }) => {
                   const length = nativeEvent.lines[0]?.text.length;
@@ -203,16 +253,16 @@ export function ReceiveAddressCard({
                   }
 
                   setAddressLayout(previous =>
-                    previous?.address === account.address &&
+                    previous?.address === shownAddress &&
                     previous.firstLineLength === length
                       ? previous
-                      : { address: account.address, firstLineLength: length },
+                      : { address: shownAddress, firstLineLength: length },
                   );
                 }}>
                 <Text style={styles.highlightAddrPart}>
-                  {account.address.slice(0, 8)}
+                  {shownAddress.slice(0, 8)}
                 </Text>
-                {account.address.slice(8, -14)}
+                {shownAddress.slice(8, -14)}
               </Text>
             </View>
             <Pressable style={styles.addressFirstLine} onPress={onCopy}>
@@ -259,6 +309,32 @@ const getStyle = createGetStyles2024(({ colors2024, isLight }) => ({
       ? colors2024['neutral-bg-1']
       : colors2024['neutral-bg-2'],
     paddingHorizontal: 30,
+  },
+  networkSwitch: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    padding: 3,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: isLight
+      ? colors2024['neutral-bg-2']
+      : colors2024['neutral-bg-3'],
+  },
+  networkOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+  },
+  networkOptionOn: {
+    backgroundColor: colors2024['neutral-bg-1'],
+  },
+  networkOptionText: {
+    fontSize: 14,
+    color: colors2024['neutral-secondary'],
+  },
+  networkOptionTextOn: {
+    color: colors2024['neutral-title-1'],
+    fontWeight: '600',
   },
   qrCardHeader: {
     fontSize: 16,

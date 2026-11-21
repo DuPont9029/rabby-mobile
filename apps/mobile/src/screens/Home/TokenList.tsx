@@ -1,3 +1,15 @@
+import { KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
+import { StackActions } from '@react-navigation/native';
+import { navigationRef } from '@/utils/navigation';
+import { formatAmount as formatSolanaAmount } from '@/core/solana/transfer';
+import {
+  useSolanaAccount,
+  useSolanaPortfolio,
+} from '@/screens/Solana/useSolana';
+import {
+  SolanaAssetRow,
+  SolanaAssetRowData,
+} from './components/SolanaAssetRow';
 import React, {
   useCallback,
   useEffect,
@@ -97,6 +109,10 @@ type TokenListExtraItem =
     }
   | {
       type: 'custom_testnet_divider';
+    }
+  | {
+      type: 'solana_asset';
+      data: SolanaAssetRowData;
     }
   | {
       type: 'empty-token';
@@ -212,6 +228,9 @@ const getTokenListItemKey = (item: TokenListItem) => {
   if (item.type === 'custom_testnet_divider') {
     return 'custom-testnet-divider';
   }
+  if (item.type === 'solana_asset') {
+    return `solana-asset-${item.data.key}`;
+  }
   if (item.type === 'loading-skeleton') {
     return `loading-${item.data}`;
   }
@@ -300,6 +319,60 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
     !isWatchOrSafeAccount(currentAccount) &&
     !selectedChain &&
     !isLpTokenEnabled;
+  // The Solana account of a seed-phrase address (same seed), shown with the
+  // EVM tokens when no chain filter is active.
+  const showSolanaAssets =
+    currentAccount?.type === KEYRING_TYPE.HdKeyring && !selectedChain;
+  const solanaAccount = useSolanaAccount(
+    showSolanaAssets ? currentAccount?.address : undefined,
+  );
+  const { state: solanaPortfolio } = useSolanaPortfolio(
+    showSolanaAssets && solanaAccount.status === 'ready'
+      ? solanaAccount.value.address
+      : undefined,
+  );
+  const solanaItems = useMemo<TokenListExtraItem[]>(() => {
+    if (!showSolanaAssets || solanaPortfolio.status !== 'ready') {
+      return [];
+    }
+    const { lamports, tokens } = solanaPortfolio.value;
+    const rows: TokenListExtraItem[] = [];
+    if (lamports > 0n || tokens.length) {
+      rows.push({
+        type: 'solana_asset',
+        data: {
+          key: 'sol',
+          symbol: 'SOL',
+          name: 'Solana',
+          amountText: formatSolanaAmount(lamports, 9, 6),
+        },
+      });
+    }
+    for (const token of tokens) {
+      if (token.amount <= 0n) {
+        continue;
+      }
+      rows.push({
+        type: 'solana_asset',
+        data: {
+          key: token.mint,
+          symbol: token.symbol || `${token.mint.slice(0, 4)}…`,
+          name: `${token.name || 'Token'} · Solana`,
+          amountText: formatSolanaAmount(token.amount, token.decimals, 6),
+        },
+      });
+    }
+    return rows;
+  }, [showSolanaAssets, solanaPortfolio]);
+  const openSolana = useCallback(() => {
+    if (currentAccount?.address) {
+      navigationRef.current?.dispatch(
+        StackActions.push(RootNames.SolanaHome, {
+          evmAddress: currentAccount.address,
+        }),
+      );
+    }
+  }, [currentAccount?.address]);
   const isCustomTestnetSnapshotPending =
     shouldShowCustomTestnetSections &&
     customTestnetHydrationState !== 'ready' &&
@@ -525,6 +598,9 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
     const specs: TokenProjectionSectionSpec<TokenListExtraItem>[] = [
       { key: 'primary', segmentKey: 'primary' },
     ];
+    if (solanaItems.length) {
+      specs.push({ key: 'solana', data: solanaItems });
+    }
     if (hasAdditionalSection) {
       specs.push({ key: 'additional-toggle', data: ADDITIONAL_TOGGLE_ITEMS });
     }
@@ -564,6 +640,7 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
     shouldShowLpLoading,
     showAllTokens,
     showLowValueTokens,
+    solanaItems,
   ]);
 
   const regressionScenario = useRegressionScenario<'SingleAddressHome'>();
@@ -832,6 +909,16 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
           return renderLowValueTokenItem(item);
         case 'custom_testnet_assets':
           return renderCustomTestnetSectionItem(item);
+        case 'solana_asset':
+          return (
+            <View style={styles.rowWrap}>
+              <SolanaAssetRow
+                data={item.data}
+                style={tokenRowStyle}
+                onPress={openSolana}
+              />
+            </View>
+          );
         case 'custom_testnet_divider':
           return (
             <CustomTestnetAssetDivider
@@ -857,6 +944,8 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
       renderAdditionalHeaderItem,
       renderLowValueTokenItem,
       renderTokenItem,
+      openSolana,
+      tokenRowStyle,
       styles.removeLeft,
       styles.rowWrap,
       styles.singleCustomTestnetDivider,

@@ -6,6 +6,7 @@ import { findChainByID } from '@/utils/chain';
 import { navigationRef } from '@/utils/navigation';
 import { WalletIcon } from '@/components2024/WalletIcon/WalletIcon';
 import { ReceiveAddressCard } from '@/components2024/ReceiveAddressCard';
+import { useSolanaAccount } from '@/screens/Solana/useSolana';
 import { createGetStyles2024 } from '@/utils/styles';
 import { KEYRING_CLASS, KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -217,9 +218,22 @@ function ReceiveScreen(): JSX.Element {
     }
   }, [isSafe, safeNetworks, safeChains, selectedChain]);
 
+  // Seed-phrase accounts can also receive on Solana (derived address).
+  const isHdAccount = account?.type === KEYRING_TYPE.HdKeyring;
+  const [solanaActive, setSolanaActive] = useState(
+    route.params?.network === 'solana',
+  );
+  const solanaAccount = useSolanaAccount(
+    isHdAccount ? account?.address : undefined,
+  );
+  const solanaAddress =
+    solanaAccount.status === 'ready' ? solanaAccount.value.address : undefined;
+  const shownAddress =
+    isHdAccount && solanaActive ? solanaAddress : account?.address;
+
   const copyAddress = useCallback(() => {
-    Clipboard.setString(account?.address || '');
-  }, [account?.address]);
+    Clipboard.setString(shownAddress || '');
+  }, [shownAddress]);
 
   const triggerLight = () => {
     trigger('impactLight', {
@@ -241,7 +255,7 @@ function ReceiveScreen(): JSX.Element {
   }, []);
 
   const handleCopy = () => {
-    if (isShowWatchModeModal) {
+    if (isShowWatchModeModal || !shownAddress) {
       return;
     }
     triggerLight();
@@ -297,6 +311,12 @@ function ReceiveScreen(): JSX.Element {
                 showAddress={showName}
                 showQr={!isShowWatchModeModal}
                 onCopy={handleCopy}
+                solana={{
+                  available: isHdAccount,
+                  active: solanaActive,
+                  address: solanaAddress,
+                  onChange: setSolanaActive,
+                }}
               />
             </View>
           </View>

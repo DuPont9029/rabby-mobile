@@ -389,6 +389,8 @@ export type TransactionNavigatorParamList = {
     account: Account;
     tokenSymbol?: string;
     chainEnum?: CHAINS_ENUM;
+    /** Open on the Solana address (seed-phrase accounts). */
+    network?: 'evm' | 'solana';
   };
   [RootNames.Approvals]: {
     account: Account;

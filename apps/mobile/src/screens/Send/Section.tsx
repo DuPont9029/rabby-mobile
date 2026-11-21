@@ -1,3 +1,4 @@
+import { SendOnSolanaEntry } from './components/SendOnSolanaEntry';
 import React, {
   useCallback,
   useEffect,
@@ -304,7 +305,9 @@ const SendAmountInputSection = React.memo(function SendAmountInputSection() {
 
   const handleTokenAmountChange = useCallback(
     (value: string) => {
-      if (directSignBtnRef.current?.isAuthInProgress()) return false;
+      if (directSignBtnRef.current?.isAuthInProgress()) {
+        return false;
+      }
       try {
         const nextValue = formatTokenAmountInput(value, currentToken?.decimals);
         if (!TOKEN_INPUT_REGEX.test(nextValue)) {
@@ -330,8 +333,12 @@ const SendAmountInputSection = React.memo(function SendAmountInputSection() {
 
   const handleUsdAmountChange = useCallback(
     (value: string) => {
-      if (directSignBtnRef.current?.isAuthInProgress()) return false;
-      if (!activeUsdPrice) return false;
+      if (directSignBtnRef.current?.isAuthInProgress()) {
+        return false;
+      }
+      if (!activeUsdPrice) {
+        return false;
+      }
 
       try {
         const nextValue = formatSpeicalAmount(value);
@@ -518,6 +525,7 @@ const SendAmountInputSection = React.memo(function SendAmountInputSection() {
           tokenSelectProps={makeTestIDProps(E2E_ID.send.tokenSelector)}
         />
       )}
+      <SendOnSolanaEntry account={currentAccount} />
     </View>
   );
 });
