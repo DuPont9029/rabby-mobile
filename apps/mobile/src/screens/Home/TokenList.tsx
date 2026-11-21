@@ -1,12 +1,5 @@
 import { KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
-import { StackActions } from '@react-navigation/native';
-import { navigationRef } from '@/utils/navigation';
-import { formatAmount as formatSolanaAmount } from '@/core/solana/transfer';
-import {
-  useSolanaAccount,
-  useSolanaPortfolio,
-  useSolanaUnlockPrompt,
-} from '@/screens/Solana/useSolana';
+import { useSolanaTokenRows } from '@/screens/Solana/useSolanaTokenRows';
 import {
   SolanaAssetRow,
   SolanaAssetRowData,
@@ -324,95 +317,14 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
   // EVM tokens when no chain filter is active.
   const showSolanaAssets =
     currentAccount?.type === KEYRING_TYPE.HdKeyring && !selectedChain;
-  const solanaAccount = useSolanaAccount(
+  const solanaRows = useSolanaTokenRows(
     showSolanaAssets ? currentAccount?.address : undefined,
   );
-  const { state: solanaPortfolio } = useSolanaPortfolio(
-    showSolanaAssets && solanaAccount.status === 'ready'
-      ? solanaAccount.value.address
-      : undefined,
+  const solanaItems = useMemo<TokenListExtraItem[]>(
+    () => solanaRows.rows.map(data => ({ type: 'solana_asset', data })),
+    [solanaRows.rows],
   );
-  // Never prompts by itself: the row asks to unlock only when tapped.
-  const solanaUnlock = useSolanaUnlockPrompt(solanaAccount, { auto: false });
-  const solanaItems = useMemo<TokenListExtraItem[]>(() => {
-    if (!showSolanaAssets) {
-      return [];
-    }
-    if (solanaUnlock.locked) {
-      return [
-        {
-          type: 'solana_asset',
-          data: {
-            key: 'sol-locked',
-            symbol: 'SOL',
-            name: 'Solana · tap to unlock',
-            amountText: '🔒',
-          },
-        },
-      ];
-    }
-    if (solanaPortfolio.status !== 'ready') {
-      return solanaAccount.status === 'error'
-        ? []
-        : [
-            {
-              type: 'solana_asset',
-              data: {
-                key: 'sol-loading',
-                symbol: 'SOL',
-                name: 'Solana',
-                amountText: '…',
-              },
-            },
-          ];
-    }
-    const { lamports, tokens } = solanaPortfolio.value;
-    const rows: TokenListExtraItem[] = [];
-    if (lamports > 0n || tokens.length) {
-      rows.push({
-        type: 'solana_asset',
-        data: {
-          key: 'sol',
-          symbol: 'SOL',
-          name: 'Solana',
-          amountText: formatSolanaAmount(lamports, 9, 6),
-        },
-      });
-    }
-    for (const token of tokens) {
-      if (token.amount <= 0n) {
-        continue;
-      }
-      rows.push({
-        type: 'solana_asset',
-        data: {
-          key: token.mint,
-          symbol: token.symbol || `${token.mint.slice(0, 4)}…`,
-          name: `${token.name || 'Token'} · Solana`,
-          amountText: formatSolanaAmount(token.amount, token.decimals, 6),
-        },
-      });
-    }
-    return rows;
-  }, [
-    showSolanaAssets,
-    solanaAccount.status,
-    solanaPortfolio,
-    solanaUnlock.locked,
-  ]);
-  const openSolana = useCallback(() => {
-    if (solanaUnlock.locked) {
-      solanaUnlock.unlock();
-      return;
-    }
-    if (currentAccount?.address) {
-      navigationRef.current?.dispatch(
-        StackActions.push(RootNames.SolanaHome, {
-          evmAddress: currentAccount.address,
-        }),
-      );
-    }
-  }, [currentAccount?.address, solanaUnlock]);
+  const openSolana = solanaRows.onPress;
   const isCustomTestnetSnapshotPending =
     shouldShowCustomTestnetSections &&
     customTestnetHydrationState !== 'ready' &&

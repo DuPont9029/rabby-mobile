@@ -1,3 +1,9 @@
+import { useSolanaHdAccounts } from '@/screens/Solana/useSolana';
+import { useSolanaTokenRows } from '@/screens/Solana/useSolanaTokenRows';
+import {
+  SolanaAssetRow,
+  SolanaAssetRowData,
+} from '@/screens/Home/components/SolanaAssetRow';
 import React, {
   useCallback,
   useEffect,
@@ -226,6 +232,10 @@ type TokenListExtraItem =
     }
   | {
       type: 'custom_testnet_divider';
+    }
+  | {
+      type: 'solana_asset';
+      data: SolanaAssetRowData;
     }
   | {
       type: 'empty-assets';
@@ -849,6 +859,14 @@ export const TokenList = () => {
     ? ('lowValueLp' as const)
     : ('lowValueDefault' as const);
   const hasAdditionalSection = hasAdditionalTokens || isLpTokenEnabled;
+  // The Solana account of the (first) seed-phrase address, with the tokens.
+  const solanaHdAccounts = useSolanaHdAccounts();
+  const solanaRows = useSolanaTokenRows(solanaHdAccounts[0]?.address);
+  const solanaItems = useMemo<TokenListExtraItem[]>(
+    () => solanaRows.rows.map(data => ({ type: 'solana_asset', data })),
+    [solanaRows.rows],
+  );
+
   const sectionSpecs = useMemo<
     TokenProjectionSectionSpec<TokenListExtraItem>[]
   >(() => {
@@ -865,6 +883,9 @@ export const TokenList = () => {
     }
 
     specs.push({ key: 'primary', segmentKey: 'primary' });
+    if (solanaItems.length) {
+      specs.push({ key: 'solana', data: solanaItems });
+    }
     if (hasAdditionalSection) {
       specs.push({ key: 'additional-toggle', data: ADDITIONAL_TOGGLE_ITEMS });
     }
@@ -899,6 +920,7 @@ export const TokenList = () => {
     selectedLowValueTokenCount,
     showAllTokens,
     showLowValueTokens,
+    solanaItems,
     visibleCustomTestnetSections.length,
   ]);
 
@@ -970,6 +992,10 @@ export const TokenList = () => {
           );
         case 'custom_testnet_divider':
           return <CustomTestnetAssetDivider />;
+        case 'solana_asset':
+          return (
+            <SolanaAssetRow data={item.data} onPress={solanaRows.onPress} />
+          );
         case 'empty-assets':
           return (
             <EmptyAssets
@@ -1003,6 +1029,7 @@ export const TokenList = () => {
       loadCustomTestnetTokens,
       styles,
       showAllTokens,
+      solanaRows.onPress,
       t,
     ],
   );
@@ -1016,6 +1043,9 @@ export const TokenList = () => {
     }
     if (item.type === 'custom_testnet_divider') {
       return 'custom-testnet-divider';
+    }
+    if (item.type === 'solana_asset') {
+      return `solana-asset-${item.data.key}`;
     }
     if (item.type === 'empty-assets') {
       return `empty-assets-${item.data}`;
