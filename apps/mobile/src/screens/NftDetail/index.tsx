@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Dimensions, StyleSheet, View, ScrollView } from 'react-native';
@@ -11,6 +10,7 @@ import { Media } from '@/components/Media';
 import { NftImageViewer } from '@/components/NftImageViewer';
 import { NftMetadataSection } from '@/components/NftMetadataSection';
 import { toOnchainNftRef } from '@/utils/onchainNftMediaCore';
+import { loadOnchainNftMetadata } from '@/utils/onchainNftMedia';
 import { IconDefaultNFT, IconNumberNFT } from '@/assets/icons/nft';
 import { CHAINS_ENUM } from '@/constant/chains';
 import {
@@ -74,6 +74,30 @@ export const NFTDetailScreen = () => {
   const chain = getCHAIN_ID_LIST().get((token as NonListType).chain);
   const iconUri = chain?.logo;
 
+  // The indexer has no name for some fully on-chain NFTs: use the token's
+  // own metadata name (read on-chain, verified by Helios on Ethereum).
+  const indexedName = (token as NFTItem)?.name;
+  const [onchainName, setOnchainName] = useState<string | null>(null);
+  useEffect(() => {
+    setOnchainName(null);
+    const ref = indexedName ? undefined : toOnchainNftRef(token as NFTItem);
+    if (!ref) {
+      return;
+    }
+    let active = true;
+    loadOnchainNftMetadata(ref)
+      .then(metadata => {
+        const name = metadata?.name?.trim();
+        if (active && name) {
+          setOnchainName(name);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [indexedName, token]);
+
   const TokenDetailHeaderArea = useMemoizedFn(() => {
     return (
       <View style={styles.headerArea}>
@@ -113,7 +137,7 @@ export const NFTDetailScreen = () => {
         <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
           {/* {token?.name} */}
           {ellipsisOverflowedText(
-            (token as NFTItem)?.name || t('global.unknownNFT'),
+            indexedName || onchainName || t('global.unknownNFT'),
             20,
           )}
         </Text>
@@ -134,7 +158,7 @@ export const NFTDetailScreen = () => {
       // only the row's own back button is rendered.
       unstable_headerLeftItems: () => [],
     });
-  }, [TokenDetailHeaderArea, setNavigationOptions]);
+  }, [TokenDetailHeaderArea, setNavigationOptions, onchainName]);
 
   const calPrice = useCallback((iToken: NFTItem) => {
     if (iToken?.usd_price) {
@@ -182,7 +206,9 @@ export const NFTDetailScreen = () => {
         }
       }
       const fromAccount = foundRet.matched || foundRet.onlyMatchedAddress;
-      if (!fromAccount) return;
+      if (!fromAccount) {
+        return;
+      }
 
       await switchSceneCurrentAccount('SendNFT', fromAccount);
       naviPush(RootNames.StackTransaction, {
