@@ -19,6 +19,9 @@ import {
   useUpgradePromptVisible,
 } from './useUpgradePrompt';
 import { UpgradePromptDialog } from './UpgradePromptDialog';
+import { HELIOS_BUILD_SHA } from '@/utils/heliosReleases';
+import { isApkInstallerAvailable } from '@/core/native/heliosApkInstaller';
+import { downloadAndInstallHeliosUpdate } from './heliosUpdate';
 
 export function UpgradePromptModal() {
   const visible = useUpgradePromptVisible();
@@ -60,6 +63,16 @@ export function UpgradePromptModal() {
 
   const handleUpdate = useCallback(async () => {
     dismissUpgradePrompt();
+
+    // Helios builds: download the release APK and open Android's installer.
+    if (
+      HELIOS_BUILD_SHA &&
+      isApkInstallerAvailable() &&
+      remoteVersion.downloadUrl
+    ) {
+      await downloadAndInstallHeliosUpdate(remoteVersion.downloadUrl);
+      return;
+    }
 
     try {
       if (Platform.OS !== 'android') {

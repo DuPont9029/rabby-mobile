@@ -250,7 +250,9 @@ export function UpgradePromptDialog({
           <Text
             style={[styles.versionText, isDark && styles.versionTextDark]}
             selectable={false}>
-            v{remoteVersion.version}
+            {/^\d/.test(remoteVersion.version)
+              ? `v${remoteVersion.version}`
+              : remoteVersion.version}
           </Text>
         </View>
       </GestureHandlerRootView>
