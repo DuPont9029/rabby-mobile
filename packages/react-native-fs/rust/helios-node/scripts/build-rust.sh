@@ -25,7 +25,16 @@ TARGET_LOWER="$(echo "${RUST_TARGET}" | tr '-' '_')"
 BUILD_ROOT="$(dirname "${OUTPUT}")/cargo-target"
 CARGO_HOME_DIR="${CARGO_HOME:-${HOME}/.cargo}"
 SEP=$'\x1f'
+# Weak references that nothing in this library defines (aws-lc's sdallocx,
+# OPENSSL_memory_* and getrandom, zstd's trace hooks) would otherwise be
+# resolved at load time against whatever the app process exports. React
+# Native's libjsi.so exports a *data* symbol named sdallocx; aws-lc called it
+# as its free() and crashed. Pin them to NULL here (the version script then
+# makes them local), so the libraries always use their built-in defaults.
 FLAGS="--remap-path-prefix=${CARGO_HOME_DIR}=/cargo${SEP}-Clink-arg=-Wl,-soname,librabby_helios_node.so${SEP}-Clink-arg=-Wl,-z,max-page-size=16384"
+for weak in sdallocx OPENSSL_memory_alloc OPENSSL_memory_free OPENSSL_memory_get_size OPENSSL_memory_realloc ZSTD_trace_decompress_begin ZSTD_trace_decompress_end getrandom; do
+  FLAGS+="${SEP}-Clink-arg=-Wl,--defsym=${weak}=0"
+done
 
 mkdir -p "$(dirname "${OUTPUT}")"
 env \
@@ -41,4 +50,12 @@ env \
     --manifest-path "${CRATE_DIR}/Cargo.toml" \
     --release --locked --lib \
     --target "${RUST_TARGET}"
-cp "${BUILD_ROOT}/${RUST_TARGET}/release/librabby_helios_node.so" "${OUTPUT}"
+LIBRARY="${BUILD_ROOT}/${RUST_TARGET}/release/librabby_helios_node.so"
+# Guard: the library may only import from the system libc/libm/libdl.
+UNEXPECTED="$("${TOOLCHAIN_BIN}/llvm-nm" -D --undefined-only "${LIBRARY}" | grep -v -E '@(LIBC|LIBDL|LIBM)' || true)"
+if [[ -n "${UNEXPECTED}" ]]; then
+  echo "librabby_helios_node.so imports unexpected symbols:" >&2
+  echo "${UNEXPECTED}" >&2
+  exit 1
+fi
+cp "${LIBRARY}" "${OUTPUT}"
