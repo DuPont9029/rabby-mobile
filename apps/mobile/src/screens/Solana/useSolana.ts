@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ensureWalletUnlockedForAction } from '@/utils/walletUnlock';
 import { KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
 
 import { useMyAccounts } from '@/hooks/account';
@@ -31,6 +32,39 @@ export type LoadState<T> =
 const ACCOUNT_RETRY_DELAYS_MS = [500, 1_000, 2_000, 3_000, 5_000];
 /** One derivation attempt never blocks the screen longer than this. */
 const ACCOUNT_ATTEMPT_TIMEOUT_MS = 20_000;
+
+/**
+ * Asks for the wallet password / biometrics when the keys are locked, then
+ * lets the account hook pick the keys up on its next retry.
+ */
+export const useSolanaUnlockPrompt = (
+  state: LoadState<unknown>,
+  { auto }: { auto: boolean },
+) => {
+  const prompted = useRef(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const locked = state.status === 'loading' && state.reason === 'locked';
+  const unlock = useCallback(async () => {
+    if (unlocking) {
+      return;
+    }
+    setUnlocking(true);
+    try {
+      await ensureWalletUnlockedForAction();
+    } catch {
+      // Cancelled or failed: the button stays available.
+    } finally {
+      setUnlocking(false);
+    }
+  }, [unlocking]);
+  useEffect(() => {
+    if (auto && locked && !prompted.current) {
+      prompted.current = true;
+      unlock();
+    }
+  }, [auto, locked, unlock]);
+  return { locked, unlocking, unlock };
+};
 
 export const useSolanaAccount = (evmAddress?: string) => {
   const [state, setState] = useState<LoadState<SolanaAccount>>({

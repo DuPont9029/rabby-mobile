@@ -6,7 +6,10 @@ import { findChainByID } from '@/utils/chain';
 import { navigationRef } from '@/utils/navigation';
 import { WalletIcon } from '@/components2024/WalletIcon/WalletIcon';
 import { ReceiveAddressCard } from '@/components2024/ReceiveAddressCard';
-import { useSolanaAccount } from '@/screens/Solana/useSolana';
+import {
+  useSolanaAccount,
+  useSolanaUnlockPrompt,
+} from '@/screens/Solana/useSolana';
 import { createGetStyles2024 } from '@/utils/styles';
 import { KEYRING_CLASS, KEYRING_TYPE } from '@rabby-wallet/keyring-utils';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -228,6 +231,10 @@ function ReceiveScreen(): JSX.Element {
   );
   const solanaAddress =
     solanaAccount.status === 'ready' ? solanaAccount.value.address : undefined;
+  // Showing the Solana address needs the seed: ask to unlock if locked.
+  useSolanaUnlockPrompt(solanaAccount, {
+    auto: isHdAccount && solanaActive,
+  });
   const shownAddress =
     isHdAccount && solanaActive ? solanaAddress : account?.address;
 

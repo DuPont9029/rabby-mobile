@@ -30,6 +30,7 @@ import { SolanaNftImage } from './SolanaNftImage';
 import {
   useSolanaAccount,
   useSolanaHdAccounts,
+  useSolanaUnlockPrompt,
   useSolanaPortfolio,
 } from './useSolana';
 
@@ -55,6 +56,8 @@ export const SolanaHomeScreen = () => {
   }, [evmAddress, hdAccounts]);
 
   const accountState = useSolanaAccount(evmAddress);
+  // The Solana key comes from the seed: unlock the wallet if needed.
+  const unlockPrompt = useSolanaUnlockPrompt(accountState, { auto: true });
   const solanaAddress =
     accountState.status === 'ready' ? accountState.value.address : undefined;
   const { state: portfolio, refresh } = useSolanaPortfolio(solanaAddress);
@@ -175,14 +178,23 @@ export const SolanaHomeScreen = () => {
             {accountState.reason === 'locked'
               ? t('page.solana.waitingUnlock', {
                   defaultValue:
-                    'The wallet is locked. Unlock it (e.g. open Settings or sign anything) and the Solana address appears here.',
+                    'The wallet is locked: unlock it to use your Solana account.',
                 })
               : t('page.solana.waitingKeys', {
                   defaultValue: 'Loading the wallet keys… (retrying)',
                 })}
             {` (${accountState.reason})`}
           </Text>
-        ) : (
+        ) : null}
+        {unlockPrompt.locked ? (
+          <Button
+            height={40}
+            type="ghost"
+            title={t('page.solana.unlock', { defaultValue: 'Unlock wallet' })}
+            loading={unlockPrompt.unlocking}
+            onPress={unlockPrompt.unlock}
+          />
+        ) : accountState.status === 'error' ? null : (
           <Text style={styles.address} selectable>
             {solanaAddress || '…'}
           </Text>
