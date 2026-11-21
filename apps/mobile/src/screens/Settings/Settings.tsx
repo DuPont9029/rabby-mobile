@@ -890,7 +890,7 @@ function SettingsBlocks() {
                         color: colors['red-default'],
                         paddingRight: 4,
                       }}>
-                      (New version)
+                      (New)
                     </Text>
                   )}
                   {rightIconNode}
