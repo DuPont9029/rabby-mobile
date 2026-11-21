@@ -274,21 +274,13 @@ export const SolanaHomeScreen = () => {
           <TouchableOpacity
             key={token.account}
             style={styles.tokenRow}
-            disabled={token.frozen || !evmAddress}
+            disabled={!evmAddress}
             onPress={() =>
               evmAddress &&
-              naviPush(RootNames.SolanaSend, {
+              naviPush(RootNames.SolanaTokenDetail, {
                 evmAddress,
-                asset: {
-                  kind: 'token',
-                  mint: token.mint,
-                  decimals: token.decimals,
-                  tokenProgram: token.tokenProgram,
-                  symbol: token.symbol,
-                  name: token.name,
-                  balance: token.amount.toString(),
-                  sourceAccount: token.account,
-                },
+                mint: token.mint,
+                symbol: token.symbol,
               })
             }>
             <View style={styles.flex}>

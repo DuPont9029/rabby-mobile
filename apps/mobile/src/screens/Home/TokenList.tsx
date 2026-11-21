@@ -867,7 +867,7 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
               <SolanaAssetRow
                 data={item.data}
                 style={tokenRowStyle}
-                onPress={openSolana}
+                onPress={() => openSolana(item.data)}
               />
             </View>
           );

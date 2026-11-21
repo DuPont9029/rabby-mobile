@@ -75,17 +75,28 @@ export const useSolanaTokenRows = (evmAddress?: string) => {
     return out;
   }, [evmAddress, portfolio, solanaAccount.status, unlockPrompt.locked]);
 
-  const onPress = useCallback(() => {
-    if (unlockPrompt.locked) {
-      unlockPrompt.unlock();
-      return;
-    }
-    if (evmAddress) {
+  /** Opens the row's detail (SOL or the token); unlocks first if needed. */
+  const onPress = useCallback(
+    (row?: SolanaAssetRowData) => {
+      if (unlockPrompt.locked) {
+        unlockPrompt.unlock();
+        return;
+      }
+      if (!evmAddress) {
+        return;
+      }
+      const isToken = !!row && !row.key.startsWith('sol');
       navigationRef.current?.dispatch(
-        StackActions.push(RootNames.SolanaHome, { evmAddress }),
+        row && (row.key === 'sol' || isToken)
+          ? StackActions.push(RootNames.SolanaTokenDetail, {
+              evmAddress,
+              ...(isToken ? { mint: row.key, symbol: row.symbol } : {}),
+            })
+          : StackActions.push(RootNames.SolanaHome, { evmAddress }),
       );
-    }
-  }, [evmAddress, unlockPrompt]);
+    },
+    [evmAddress, unlockPrompt],
+  );
 
   return { rows, onPress };
 };

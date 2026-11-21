@@ -29,5 +29,7 @@ export type SolanaScreenParams = {
   SolanaHome: { evmAddress?: string } | undefined;
   SolanaSend: { evmAddress: string; asset: SolanaSendAsset };
   WormholeBridge: { evmAddress: string };
+  /** `mint` absent: SOL. */
+  SolanaTokenDetail: { evmAddress: string; mint?: string; symbol?: string };
   SolanaNftDetail: { evmAddress: string; nft: SolanaNft };
 };

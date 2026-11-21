@@ -51,6 +51,7 @@ import {
   SolanaNftDetailScreen,
   SolanaSendScreen,
   WormholeBridgeScreen,
+  SolanaTokenDetailScreen,
   TokenDetailScreen,
   TokenMarketInfoScreen,
 } from '@/perfs/loadables/screens';
@@ -810,6 +811,11 @@ export default function AppNavigation() {
                         backgroundColor: colors['neutral-bg1'],
                       },
                     })}
+                  />
+                  <RootStack.Screen
+                    name={RootNames.SolanaTokenDetail}
+                    component={SolanaTokenDetailScreen}
+                    options={{ headerShown: false }}
                   />
                   <RootStack.Screen
                     name={RootNames.WormholeBridge}

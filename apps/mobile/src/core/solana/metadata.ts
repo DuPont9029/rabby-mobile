@@ -49,7 +49,7 @@ class Reader {
     if (this.remaining < 1) {
       throw new Error('unexpected end of metadata');
     }
-    return this.bytes[this.offset++];
+    return this.bytes[this.offset++]!;
   }
 
   u16() {

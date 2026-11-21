@@ -1,0 +1,137 @@
+{
+  "blockTime": 1795233525,
+  "meta": {
+    "err": null,
+    "fee": 5000,
+    "preBalances": [
+      4997313000,
+      0,
+      1461600,
+      0,
+      1,
+      1009200,
+      20508277856,
+      0,
+      19141440,
+      1844400,
+      1134480,
+      5938070540,
+      2141440,
+      1808480,
+      1127520
+    ],
+    "postBalances": [
+      4995164240,
+      655320,
+      1461600,
+      1488440,
+      1,
+      1009200,
+      20508277856,
+      0,
+      19141440,
+      1844400,
+      1134480,
+      5938070540,
+      2141440,
+      1808480,
+      1127520
+    ],
+    "preTokenBalances": [],
+    "postTokenBalances": [
+      {
+        "accountIndex": 3,
+        "mint": "6F5YWWrUMNpee8C6BDUc6DmRvYRMDDTgJHwKhbXuifWs",
+        "owner": "3V8fYJRbxJiKtXoPMd9M6eQC2MRTDv9RHC867LaEm1m7",
+        "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "uiTokenAmount": {
+          "amount": "1000000",
+          "decimals": 8,
+          "uiAmount": 0.01,
+          "uiAmountString": "0.01"
+        }
+      }
+    ]
+  },
+  "transaction": {
+    "message": {
+      "accountKeys": [
+        {
+          "pubkey": "3V8fYJRbxJiKtXoPMd9M6eQC2MRTDv9RHC867LaEm1m7",
+          "signer": true,
+          "writable": true
+        },
+        {
+          "pubkey": "38HNKX91Df5gs2cecXorQYPdkQpcXpZpRuWEVduu81xP",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "pubkey": "6F5YWWrUMNpee8C6BDUc6DmRvYRMDDTgJHwKhbXuifWs",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "pubkey": "FJh6FprFZZhGcfXM2Ldpc2w9kPbRhZV3kk22hVcZgrEn",
+          "signer": false,
+          "writable": true
+        },
+        {
+          "pubkey": "11111111111111111111111111111111",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "SysvarRent111111111111111111111111111111111",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "rRsXLHe7sBHdyKU3KY3wbcgWvoT1Ntqudf6e9PKusgb",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "8PFZNjn19BBYVHNp4H31bEW7eAmu78Yf2RKV8EeA461K",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "A5vZjtMsWH6Mgf8yeJnPUERkHy7K5HKvaSsbNoPtMYM5",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "DZnkkTmCiFWfYTfT41X3Rd1kDgozqzxWaHqsw6W4x2oe",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "EagqTMZzix3K6QhYKVrhE3wwEJ2AkDaGqQKX1tVu2SWY",
+          "signer": false,
+          "writable": false
+        },
+        {
+          "pubkey": "ErgSoGgESgjk9Jc4u61URqPUwx3yjW6htUShBkiFW6ui",
+          "signer": false,
+          "writable": false
+        }
+      ]
+    }
+  }
+}

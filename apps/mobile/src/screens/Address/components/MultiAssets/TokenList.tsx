@@ -994,7 +994,10 @@ export const TokenList = () => {
           return <CustomTestnetAssetDivider />;
         case 'solana_asset':
           return (
-            <SolanaAssetRow data={item.data} onPress={solanaRows.onPress} />
+            <SolanaAssetRow
+              data={item.data}
+              onPress={() => solanaRows.onPress(item.data)}
+            />
           );
         case 'empty-assets':
           return (
@@ -1029,7 +1032,7 @@ export const TokenList = () => {
       loadCustomTestnetTokens,
       styles,
       showAllTokens,
-      solanaRows.onPress,
+      solanaRows,
       t,
     ],
   );

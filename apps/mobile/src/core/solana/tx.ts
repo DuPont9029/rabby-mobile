@@ -276,7 +276,7 @@ const compareKeys = (a: string, b: string) => {
   const right = decodeAddress(b);
   for (let index = 0; index < left.length; index += 1) {
     if (left[index] !== right[index]) {
-      return left[index] - right[index];
+      return left[index]! - right[index]!;
     }
   }
   return 0;

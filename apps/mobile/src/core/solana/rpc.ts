@@ -237,7 +237,7 @@ export const createSolanaRpc = (
       .map(fee => fee.prioritizationFee)
       .filter(fee => Number.isFinite(fee))
       .sort((a, b) => a - b);
-    return values.length ? BigInt(values[Math.floor(values.length / 2)]) : 0n;
+    return BigInt(values[Math.floor(values.length / 2)] ?? 0);
   };
 
   /**
@@ -299,9 +299,52 @@ export const createSolanaRpc = (
   const getBlockHeight = () =>
     call<number>('getBlockHeight', [{ commitment: 'confirmed' }]);
 
+  /** Raw account data (base64-decoded), or `null` if the account is missing. */
+  const getAccountData = async (address: string) => {
+    const result = await call<{
+      value: { data: [string, string]; owner: string } | null;
+    }>('getAccountInfo', [
+      address,
+      { encoding: 'base64', commitment: 'confirmed' },
+    ]);
+    return result.value
+      ? {
+          owner: result.value.owner,
+          data: Uint8Array.from(Buffer.from(result.value.data[0], 'base64')),
+        }
+      : null;
+  };
+
+  /** Most recent transaction signatures that touched `address`. */
+  const getSignaturesForAddress = (address: string, limit = 20) =>
+    call<
+      Array<{
+        signature: string;
+        blockTime: number | null;
+        err: unknown;
+      }>
+    >('getSignaturesForAddress', [
+      address,
+      { limit: Math.min(Math.max(limit, 1), 100), commitment: 'confirmed' },
+    ]);
+
+  /** A transaction with parsed balances (null while unknown). */
+  const getParsedTransaction = (signature: string) =>
+    call<ParsedTransaction | null>('getTransaction', [
+      signature,
+      {
+        encoding: 'jsonParsed',
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0,
+      },
+    ]);
+
   return {
     endpoint,
     call,
+    getAccountData,
+    getSignaturesForAddress,
+    getParsedTransaction,
     getBalance,
     getTokenAccounts,
     getMultipleAccounts,
@@ -313,6 +356,34 @@ export const createSolanaRpc = (
     sendTransaction,
     getSignatureStatus,
     getBlockHeight,
+  };
+};
+
+export type ParsedTokenBalance = {
+  accountIndex: number;
+  mint: string;
+  owner?: string;
+  uiTokenAmount: { amount: string; decimals: number };
+};
+
+export type ParsedTransaction = {
+  blockTime: number | null;
+  meta: {
+    err: unknown;
+    fee: number;
+    preBalances: number[];
+    postBalances: number[];
+    preTokenBalances?: ParsedTokenBalance[];
+    postTokenBalances?: ParsedTokenBalance[];
+  } | null;
+  transaction: {
+    message: {
+      accountKeys: Array<{
+        pubkey: string;
+        signer: boolean;
+        writable: boolean;
+      }>;
+    };
   };
 };
 
