@@ -5,6 +5,7 @@ import { formatAmount as formatSolanaAmount } from '@/core/solana/transfer';
 import {
   useSolanaAccount,
   useSolanaPortfolio,
+  useSolanaUnlockPrompt,
 } from '@/screens/Solana/useSolana';
 import {
   SolanaAssetRow,
@@ -331,9 +332,39 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
       ? solanaAccount.value.address
       : undefined,
   );
+  // Never prompts by itself: the row asks to unlock only when tapped.
+  const solanaUnlock = useSolanaUnlockPrompt(solanaAccount, { auto: false });
   const solanaItems = useMemo<TokenListExtraItem[]>(() => {
-    if (!showSolanaAssets || solanaPortfolio.status !== 'ready') {
+    if (!showSolanaAssets) {
       return [];
+    }
+    if (solanaUnlock.locked) {
+      return [
+        {
+          type: 'solana_asset',
+          data: {
+            key: 'sol-locked',
+            symbol: 'SOL',
+            name: 'Solana · tap to unlock',
+            amountText: '🔒',
+          },
+        },
+      ];
+    }
+    if (solanaPortfolio.status !== 'ready') {
+      return solanaAccount.status === 'error'
+        ? []
+        : [
+            {
+              type: 'solana_asset',
+              data: {
+                key: 'sol-loading',
+                symbol: 'SOL',
+                name: 'Solana',
+                amountText: '…',
+              },
+            },
+          ];
     }
     const { lamports, tokens } = solanaPortfolio.value;
     const rows: TokenListExtraItem[] = [];
@@ -363,8 +394,17 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
       });
     }
     return rows;
-  }, [showSolanaAssets, solanaPortfolio]);
+  }, [
+    showSolanaAssets,
+    solanaAccount.status,
+    solanaPortfolio,
+    solanaUnlock.locked,
+  ]);
   const openSolana = useCallback(() => {
+    if (solanaUnlock.locked) {
+      solanaUnlock.unlock();
+      return;
+    }
     if (currentAccount?.address) {
       navigationRef.current?.dispatch(
         StackActions.push(RootNames.SolanaHome, {
@@ -372,7 +412,7 @@ export const TokenList = ({ onForeground, onRefresh }: Props) => {
         }),
       );
     }
-  }, [currentAccount?.address]);
+  }, [currentAccount?.address, solanaUnlock]);
   const isCustomTestnetSnapshotPending =
     shouldShowCustomTestnetSections &&
     customTestnetHydrationState !== 'ready' &&

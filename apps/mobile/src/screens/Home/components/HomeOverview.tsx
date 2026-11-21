@@ -11,7 +11,6 @@ import RcIconSendCC from '@/assets2024/icons/home/IconSendCC.svg';
 import RcIconSwapCC from '@/assets2024/icons/home/IconSwapCC.svg';
 import RcIconMarketCC from '@/assets2024/icons/home/IconMarketCC.svg';
 import RcIconNftCC from '@/assets2024/icons/home/IconNftCC.svg';
-import RcIconSolanaCC from '@/assets2024/icons/home/IconSolanaCC.svg';
 import RcIconConvertDustCC from '@/assets2024/icons/home/IconDustCC.svg';
 import RcIconMemeCoinCC from '@/assets2024/icons/home/IconMemeCoinCC.svg';
 
@@ -974,11 +973,6 @@ export const HomeOverview = React.memo(() => {
           key: MultiHomeFeatTitle.NFT,
           title: t('page.home.services.nft'),
           icon: RcIconNftCC,
-        },
-        {
-          key: MultiHomeFeatTitle.Solana,
-          title: t('page.home.services.solana'),
-          icon: RcIconSolanaCC,
         },
         {
           key: MultiHomeFeatTitle.Perps,
