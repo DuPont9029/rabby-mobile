@@ -185,52 +185,88 @@ export type OnchainNftDetails = {
   transient?: boolean;
 };
 
-const detailsCache = new Map<string, Promise<OnchainNftDetails>>();
+type CachedDetails = {
+  promise: Promise<OnchainNftDetails>;
+  /** When the read started. */
+  at: number;
+  /** Last definitive answer, kept while a refresh is pending or fails. */
+  settled?: OnchainNftDetails;
+};
+
+const detailsCache = new Map<string, CachedDetails>();
 
 const cacheKey = ({ chain, contractId, tokenId }: OnchainNftRef) =>
   `${chain}:${contractId.toLowerCase()}:${tokenId}`;
 
+export type LoadDetailsOptions = {
+  /**
+   * Re-read the chain when the cached answer is older than this. Without it
+   * the cached answer is reused for the app session.
+   */
+  maxAgeMs?: number;
+};
+
 /**
  * The token URI and, when it is an inline `data:application/json` document,
  * its parsed metadata. Remote URIs are returned as text but never fetched.
- * Results, including misses, are cached for the app session.
+ * A failed refresh keeps the last definitive answer.
  */
 export const loadOnchainNftDetails = (
   ref: OnchainNftRef,
+  options: LoadDetailsOptions = {},
 ): Promise<OnchainNftDetails> => {
   const key = cacheKey(ref);
   const cached = detailsCache.get(key);
-  if (cached) {
-    return cached;
+  const fresh =
+    cached &&
+    (options.maxAgeMs === undefined ||
+      Date.now() - cached.at < options.maxAgeMs);
+  if (cached && fresh) {
+    return cached.promise;
   }
-  const pending: Promise<OnchainNftDetails> = readTokenUri(ref)
+  const previous = cached?.settled;
+  const entry = { at: Date.now(), settled: previous } as CachedDetails;
+  entry.promise = readTokenUri(ref)
     .then(({ uri, transient }) => ({
       tokenUri: uri,
       metadata: parseInlineTokenUri(uri),
       transient,
     }))
-    .catch(() => ({ tokenUri: null, metadata: null, transient: true }));
-  detailsCache.set(key, pending);
-  // Only definitive answers stay cached for the session.
-  pending.then(details => {
-    if (details.transient && detailsCache.get(key) === pending) {
-      detailsCache.delete(key);
-    }
-  });
+    .catch(() => ({ tokenUri: null, metadata: null, transient: true }))
+    .then(details => {
+      if (!details.transient) {
+        entry.settled = details;
+        return details;
+      }
+      // Temporary failure: serve the last good answer if there is one, and
+      // do not keep the miss cached so the next request retries.
+      if (detailsCache.get(key) === entry) {
+        if (previous) {
+          entry.promise = Promise.resolve(previous);
+          entry.at = 0; // stale: refresh on next request with maxAgeMs
+        } else {
+          detailsCache.delete(key);
+        }
+      }
+      return previous ?? details;
+    });
+  detailsCache.delete(key);
+  detailsCache.set(key, entry);
   if (detailsCache.size > MAX_CACHE_ENTRIES) {
     const oldest = detailsCache.keys().next().value;
     if (oldest !== undefined) {
       detailsCache.delete(oldest);
     }
   }
-  return pending;
+  return entry.promise;
 };
 
 /** On-chain inline metadata, or `null` (remote URIs are not fetched). */
 export const loadOnchainNftMetadata = async (
   ref: OnchainNftRef,
+  options?: LoadDetailsOptions,
 ): Promise<OnchainNftMetadata | null> =>
-  (await loadOnchainNftDetails(ref)).metadata;
+  (await loadOnchainNftDetails(ref, options)).metadata;
 
 /**
  * The NFT's on-chain artwork as SVG markup (or `null`), and whether a miss
@@ -238,8 +274,9 @@ export const loadOnchainNftMetadata = async (
  */
 export const loadOnchainNftArtwork = async (
   ref: OnchainNftRef,
+  options?: LoadDetailsOptions,
 ): Promise<{ svg: string | null; transient: boolean }> => {
-  const details = await loadOnchainNftDetails(ref);
+  const details = await loadOnchainNftDetails(ref, options);
   return {
     svg: inlineSvgFromMetadata(details.metadata),
     transient: !!details.transient,

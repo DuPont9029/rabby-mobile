@@ -54,6 +54,50 @@ describe('on-chain NFT reads', () => {
     expect(rpc()).toHaveBeenCalledTimes(1);
   });
 
+  it('re-reads the chain when the cached answer is older than maxAgeMs', async () => {
+    const updatedSvg = SVG.replace('width="1"', 'width="2"');
+    const updatedUri = ethers.utils.defaultAbiCoder.encode(
+      ['string'],
+      [
+        `data:application/json;base64,${Buffer.from(
+          JSON.stringify({
+            image: `data:image/svg+xml;base64,${Buffer.from(
+              updatedSvg,
+            ).toString('base64')}`,
+          }),
+        ).toString('base64')}`,
+      ],
+    );
+    rpc()
+      .mockResolvedValueOnce(encodedTokenUri)
+      .mockResolvedValueOnce(updatedUri);
+
+    expect((await loadOnchainNftArtwork(ref('7'))).svg).toBe(SVG);
+    // Still fresh: served from the cache.
+    expect(
+      (await loadOnchainNftArtwork(ref('7'), { maxAgeMs: 20_000 })).svg,
+    ).toBe(SVG);
+    expect(rpc()).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(21_000);
+    expect(
+      (await loadOnchainNftArtwork(ref('7'), { maxAgeMs: 20_000 })).svg,
+    ).toBe(updatedSvg);
+    expect(rpc()).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the last good artwork when a refresh fails', async () => {
+    rpc().mockResolvedValueOnce(encodedTokenUri);
+    expect((await loadOnchainNftArtwork(ref('8'))).svg).toBe(SVG);
+
+    jest.advanceTimersByTime(21_000);
+    rpc().mockRejectedValue(new Error('rpc down'));
+    const refreshed = await loadOnchainNftArtwork(ref('8'), {
+      maxAgeMs: 20_000,
+    });
+    expect(refreshed).toEqual({ svg: SVG, transient: false });
+  });
+
   it('times out a hung RPC call and does not cache the miss', async () => {
     rpc().mockReturnValue(new Promise(() => {}) as never);
 

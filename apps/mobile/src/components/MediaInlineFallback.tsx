@@ -15,6 +15,7 @@ import {
   ONCHAIN_RETRY_DELAYS_MS,
   type OnchainNftRef,
 } from '@/utils/onchainNftMedia';
+import { getNftRefreshMs, useOnchainNftRefreshTick } from '@/utils/nftRefresh';
 
 type FallbackState =
   | { status: 'pending' }
@@ -65,6 +66,10 @@ export const MediaInlineFallback = ({
   const chain = onchainNft?.chain;
   const contractId = onchainNft?.contractId;
   const tokenId = onchainNft?.tokenId;
+  // Dynamic on-chain NFTs change: re-read them on the shared schedule.
+  const refreshTick = useOnchainNftRefreshTick(
+    !!(chain && contractId && tokenId),
+  );
 
   useEffect(() => {
     setAttempt(0);
@@ -74,7 +79,11 @@ export const MediaInlineFallback = ({
   useEffect(() => {
     let active = true;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
-    setState({ status: 'pending' });
+    const isRefresh = refreshTick > 0;
+    // Keep showing the current artwork while a refresh runs.
+    setState(previous =>
+      previous.status === 'ready' ? previous : { status: 'pending' },
+    );
     const resolve = async (): Promise<{
       uri: string | null;
       retry: boolean;
@@ -85,11 +94,10 @@ export const MediaInlineFallback = ({
       let svg = inlineImageToSvg(src) ?? inlineImageToSvg(thumbnail);
       let transient = false;
       if (!svg && chain && contractId && tokenId) {
-        const artwork = await loadOnchainNftArtwork({
-          chain,
-          contractId,
-          tokenId,
-        });
+        const artwork = await loadOnchainNftArtwork(
+          { chain, contractId, tokenId },
+          isRefresh ? { maxAgeMs: getNftRefreshMs() } : undefined,
+        );
         svg = artwork.svg;
         transient = artwork.transient;
       }
@@ -108,10 +116,20 @@ export const MediaInlineFallback = ({
           return;
         }
         if (uri) {
-          setState({ status: 'ready', uri });
+          // Same artwork renders to the same cached file: no reload.
+          setState(previous =>
+            previous.status === 'ready' && previous.uri === uri
+              ? previous
+              : { status: 'ready', uri },
+          );
           return;
         }
-        setState({ status: 'failed' });
+        // A failed refresh keeps the artwork already shown.
+        setState(previous =>
+          isRefresh && previous.status === 'ready'
+            ? previous
+            : { status: 'failed' },
+        );
         const delay = ONCHAIN_RETRY_DELAYS_MS[attempt];
         if (retry && delay !== undefined) {
           retryTimer = setTimeout(() => setAttempt(value => value + 1), delay);
@@ -123,7 +141,16 @@ export const MediaInlineFallback = ({
         clearTimeout(retryTimer);
       }
     };
-  }, [attempt, chain, contractId, src, thumbnail, tokenId, variant]);
+  }, [
+    attempt,
+    chain,
+    contractId,
+    refreshTick,
+    src,
+    thumbnail,
+    tokenId,
+    variant,
+  ]);
 
   const handleImageError = useCallback(() => {
     // The rendered PNG could not be shown (e.g. evicted from the cache):

@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react';
 import type { ListRenderItem, ViewStyle } from 'react-native';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { CollapsibleRefreshControl } from '@/components/customized/ScrollViewLike/CollapsibleRefreshControl';
 
@@ -22,6 +22,13 @@ import { useTheme2024 } from '@/hooks/theme';
 
 import { NftRow, TokenRowSectionHeader } from './components/AssetRenderItems';
 import { ImportOnchainNftPanel } from './components/ImportOnchainNftPanel';
+import { NftRefreshSetting } from './components/NftRefreshSetting';
+import {
+  applyNftPrefs,
+  setNftHidden,
+  setNftPinned,
+  useNftPrefs,
+} from '@/utils/nftPrefs';
 import { useTranslation } from 'react-i18next';
 import {
   createGlobalBottomSheetModal2024,
@@ -71,6 +78,9 @@ type NftListItem =
     }
   | {
       type: 'toggle-nft';
+    }
+  | {
+      type: 'toggle-hidden-nft';
     };
 
 const NftResourceRow = React.memo(
@@ -79,11 +89,15 @@ const NftResourceRow = React.memo(
     rowStyle,
     loaderStyle,
     onPress,
+    onLongPress,
+    pinned,
   }: {
     row: NftAssetsIndexRow;
     rowStyle: ViewStyle;
     loaderStyle: ViewStyle;
     onPress: (item: NftItemWithCollection) => void;
+    onLongPress?: (row: NftAssetsIndexRow, item: NftItemWithCollection) => void;
+    pinned?: boolean;
   }) => {
     const nft = useActivityStore(
       nftEntityResourceStore.useStore,
@@ -113,6 +127,8 @@ const NftResourceRow = React.memo(
         chainLogoSize={18}
         item={item}
         onPress={() => onPress(item)}
+        onLongPress={onLongPress ? () => onLongPress(row, item) : undefined}
+        pinned={pinned}
       />
     );
   },
@@ -142,6 +158,7 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
   const { selectedChain } = useSingleHomeChain();
 
   const [showAllNfts, setShowAllNfts] = useState(false);
+  const [showHiddenNfts, setShowHiddenNfts] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const isScreenFocused = useIsFocused();
@@ -155,6 +172,7 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
   });
 
   const userAddr = currentAccount?.address?.toLowerCase();
+  const nftPrefs = useNftPrefs(userAddr);
   const { reload: reloadNftList, isLoading: loadingNft } =
     useSingleNftListController(userAddr, false);
 
@@ -193,9 +211,25 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
     },
   });
 
+  const arrangedRows = useMemo(() => {
+    const { pinned, visible, hidden } = applyNftPrefs(
+      nftIndex.rows,
+      getNftAssetsIndexRowKey,
+      nftPrefs,
+    );
+    return {
+      pinnedKeys: new Set(pinned.map(getNftAssetsIndexRowKey)),
+      defaultRows: [
+        ...pinned,
+        ...visible.slice(0, nftIndex.defaultVisibleRowCount),
+      ],
+      foldedRows: visible.slice(nftIndex.defaultVisibleRowCount),
+      hiddenRows: hidden,
+    };
+  }, [nftIndex, nftPrefs]);
+
   const dataList = useMemo(() => {
-    const defaultRows = nftIndex.rows.slice(0, nftIndex.defaultVisibleRowCount);
-    const foldedRows = nftIndex.rows.slice(nftIndex.defaultVisibleRowCount);
+    const { defaultRows, foldedRows, hiddenRows } = arrangedRows;
     const itemData: Array<{
       show: boolean;
       data: NftListItem[];
@@ -207,6 +241,13 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
       {
         show: foldedRows.length > 0,
         data: [{ type: 'toggle-nft' }, ...(showAllNfts ? foldedRows : [])],
+      },
+      {
+        show: hiddenRows.length > 0,
+        data: [
+          { type: 'toggle-hidden-nft' },
+          ...(showHiddenNfts ? hiddenRows : []),
+        ],
       },
       {
         show: !!loadingNft && nftRowCount === 0,
@@ -231,7 +272,38 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
       .filter(item => item.show)
       .map(item => item.data)
       .flat();
-  }, [loadingNft, nftIndex, nftRowCount, showAllNfts, t]);
+  }, [arrangedRows, loadingNft, nftRowCount, showAllNfts, showHiddenNfts, t]);
+
+  const handleLongPressNft = useCallback(
+    (row: NftAssetsIndexRow, item: NftItemWithCollection) => {
+      if (!userAddr) {
+        return;
+      }
+      const key = getNftAssetsIndexRowKey(row);
+      const isHidden = nftPrefs.hidden.includes(key);
+      const isPinned = nftPrefs.pinned.includes(key);
+      Alert.alert(item.name || t('global.unknownNFT'), undefined, [
+        {
+          text: isPinned
+            ? t('page.nftPrefs.unpin', { defaultValue: 'Unpin' })
+            : t('page.nftPrefs.pin', { defaultValue: 'Pin to top' }),
+          onPress: () => setNftPinned(userAddr, key, !isPinned),
+        },
+        {
+          text: isHidden
+            ? t('page.nftPrefs.unhide', { defaultValue: 'Show again' })
+            : t('page.nftPrefs.hide', { defaultValue: 'Hide' }),
+          style: isHidden ? 'default' : 'destructive',
+          onPress: () => setNftHidden(userAddr, key, !isHidden),
+        },
+        {
+          text: t('global.Cancel', { defaultValue: 'Cancel' }),
+          style: 'cancel',
+        },
+      ]);
+    },
+    [nftPrefs, t, userAddr],
+  );
 
   const regressionScenario = useRegressionScenario<'SingleAddressHome'>();
   const regressionRunId = regressionScenario.active
@@ -329,6 +401,10 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
                 rowStyle={nftRowStyle}
                 loaderStyle={styles.removeLeft}
                 onPress={handlePressNft}
+                onLongPress={handleLongPressNft}
+                pinned={arrangedRows.pinnedKeys.has(
+                  getNftAssetsIndexRowKey(item),
+                )}
               />
             </View>
           );
@@ -341,9 +417,7 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
         case 'toggle-nft':
           return (
             <TokenRowSectionHeader
-              str={String(
-                nftIndex.rows.length - nftIndex.defaultVisibleRowCount,
-              )}
+              str={String(arrangedRows.foldedRows.length)}
               fold={!showAllNfts}
               style={styles.sectionHeader}
               buttonStyle={StyleSheet.flatten([
@@ -352,6 +426,23 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
               ])}
               onPressFold={() => setShowAllNfts(visible => !visible)}
             />
+          );
+        case 'toggle-hidden-nft':
+          return (
+            <TouchableOpacity
+              style={styles.hiddenToggle}
+              onPress={() => setShowHiddenNfts(visible => !visible)}>
+              <Text style={styles.hiddenToggleText}>
+                {showHiddenNfts
+                  ? t('page.nftPrefs.hideHidden', {
+                      defaultValue: 'Hide hidden NFTs',
+                    })
+                  : t('page.nftPrefs.showHidden', {
+                      defaultValue: 'Hidden NFTs ({{count}})',
+                      count: arrangedRows.hiddenRows.length,
+                    })}
+              </Text>
+            </TouchableOpacity>
           );
         case 'empty-assets':
         case 'empty-nft':
@@ -372,7 +463,17 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
           return null;
       }
     },
-    [handlePressNft, isLight, nftIndex, nftRowStyle, showAllNfts, styles, t],
+    [
+      arrangedRows,
+      handleLongPressNft,
+      handlePressNft,
+      isLight,
+      nftRowStyle,
+      showAllNfts,
+      showHiddenNfts,
+      styles,
+      t,
+    ],
   );
   const ListRenderSeparator = useCallback(() => {
     return <View style={{ height: SPACING_HEIGHT }} />;
@@ -390,6 +491,7 @@ const NFTListInner = ({ onForeground, onRefresh }: Props) => {
           address={userAddr}
           onImported={reloadAfterImport}
         />
+        <NftRefreshSetting />
         <View style={{ height: FOOTER_HEIGHT }} />
       </View>
     );
@@ -488,6 +590,15 @@ const getStyles = createGetStyles2024(ctx => ({
   },
   removeLeft: {
     marginLeft: 0,
+  },
+  hiddenToggle: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  hiddenToggleText: {
+    fontSize: 14,
+    color: ctx.colors2024['neutral-foot'],
   },
   renderItemWrapper: {
     backgroundColor: ctx.colors2024['neutral-bg-1'],

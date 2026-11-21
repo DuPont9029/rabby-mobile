@@ -38,6 +38,8 @@ export const NftRow = memo(
     logoSize = 40,
     account,
     chainLogoSize = 16,
+    onLongPress,
+    pinned,
   }: {
     item: NftItemWithCollection;
     filterText?: string;
@@ -46,6 +48,10 @@ export const NftRow = memo(
     chainLogoSize?: number;
     account?: KeyringAccountWithAlias;
     onPress: () => void;
+    /** Opens the row actions (pin / hide). */
+    onLongPress?: () => void;
+    /** Shown with a pin mark before the name. */
+    pinned?: boolean;
   }) => {
     const { styles } = useTheme2024({ getStyle });
     const isCollection = 'nft_list' in item && !!item.nft_list.length;
@@ -81,7 +87,11 @@ export const NftRow = memo(
     const placeholder = <IconDefaultNFT width="100%" height="100%" />;
 
     return (
-      <TouchableOpacity onPress={onPress} style={[styles.wrpper, style]}>
+      <TouchableOpacity
+        onPress={onPress}
+        onLongPress={onLongPress}
+        delayLongPress={350}
+        style={[styles.wrpper, style]}>
         <View style={styles.main}>
           <View style={styles.avator}>
             <View
@@ -126,6 +136,7 @@ export const NftRow = memo(
           <View style={styles.projectNameBox}>
             <View style={styles.nameBox}>
               <Text numberOfLines={1} ellipsizeMode="tail" style={styles.name}>
+                {pinned ? '📌 ' : ''}
                 {item.name}
               </Text>
             </View>

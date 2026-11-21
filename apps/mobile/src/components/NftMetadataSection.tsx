@@ -1,3 +1,4 @@
+import { getNftRefreshMs, useOnchainNftRefreshTick } from '@/utils/nftRefresh';
 import React, { useEffect, useState } from 'react';
 import { Platform, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,9 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
 
   // Bumped to re-read the chain (automatic retry or a tap on "Retry").
   const [attempt, setAttempt] = useState(0);
+  const refreshTick = useOnchainNftRefreshTick(
+    !!(chain && contractId && tokenId),
+  );
 
   useEffect(() => {
     setAttempt(0);
@@ -63,8 +67,16 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
       setState({ status: 'done', details: null });
       return;
     }
-    setState({ status: 'loading' });
-    loadOnchainNftDetails({ chain, contractId, tokenId })
+    const isRefresh = refreshTick > 0;
+    setState(previous =>
+      isRefresh && previous.status === 'done'
+        ? previous
+        : { status: 'loading' },
+    );
+    loadOnchainNftDetails(
+      { chain, contractId, tokenId },
+      isRefresh ? { maxAgeMs: getNftRefreshMs() } : undefined,
+    )
       .catch(
         (): OnchainNftDetails => ({
           tokenUri: null,
@@ -88,7 +100,7 @@ export const NftMetadataSection = ({ nft }: { nft: NFTItem }) => {
         clearTimeout(retryTimer);
       }
     };
-  }, [attempt, chain, contractId, tokenId]);
+  }, [attempt, chain, contractId, refreshTick, tokenId]);
 
   const details = state.status === 'done' ? state.details : null;
   const metadata = details?.metadata;
