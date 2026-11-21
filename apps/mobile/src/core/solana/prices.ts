@@ -105,3 +105,27 @@ export const getPoolUsdPrice = async (
   const quoteAmount = Number(tokenAmount(quote.data)) / 1e6;
   return baseAmount > 0 ? quoteAmount / baseAmount : null;
 };
+
+const PRICE_TTL_MS = 60_000;
+const priceCache = new Map<
+  string,
+  { at: number; value: Promise<number | null> }
+>();
+
+/** Prices cached for a minute (one Chainlink / pool read per minute). */
+export const getCachedUsdPrice = (
+  rpc: SolanaRpc,
+  mint: string | null,
+  decimals = 9,
+): Promise<number | null> => {
+  const key = mint || 'SOL';
+  const hit = priceCache.get(key);
+  if (hit && Date.now() - hit.at < PRICE_TTL_MS) {
+    return hit.value;
+  }
+  const value = (
+    mint ? getPoolUsdPrice(rpc, mint, decimals) : getSolUsdPrice()
+  ).catch(() => null);
+  priceCache.set(key, { at: Date.now(), value });
+  return value;
+};

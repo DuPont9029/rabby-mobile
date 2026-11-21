@@ -114,14 +114,23 @@ export const loadSolanaHistory = async (
   limit = 15,
 ): Promise<SolanaHistoryItem[]> => {
   const signatures = await rpc.getSignaturesForAddress(lookup, limit);
-  const items: SolanaHistoryItem[] = [];
-  // Sequential: public RPCs rate-limit bursts.
-  for (const { signature } of signatures) {
-    const tx = await rpc.getParsedTransaction(signature).catch(() => null);
-    const item = tx && transferFromTransaction(tx, owner, asset, signature);
-    if (item) {
-      items.push(item);
-    }
-  }
-  return items;
+  const items: Array<SolanaHistoryItem | null> = new Array(
+    signatures.length,
+  ).fill(null);
+  // A few at a time: fast, but gentle with public RPC rate limits.
+  const CONCURRENCY = 3;
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      while (next < signatures.length) {
+        const index = next++;
+        const { signature } = signatures[index]!;
+        const tx = await rpc.getParsedTransaction(signature).catch(() => null);
+        items[index] = tx
+          ? transferFromTransaction(tx, owner, asset, signature)
+          : null;
+      }
+    }),
+  );
+  return items.filter((item): item is SolanaHistoryItem => !!item);
 };

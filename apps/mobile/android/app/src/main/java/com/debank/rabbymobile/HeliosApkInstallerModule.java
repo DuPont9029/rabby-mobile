@@ -1,8 +1,10 @@
 package com.debank.rabbymobile;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.net.Uri;
@@ -18,6 +20,9 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
@@ -103,6 +108,73 @@ public class HeliosApkInstallerModule extends ReactContextBaseJavaModule {
     } catch (Exception e) {
       promise.reject("E_INSTALL", e);
     }
+  }
+
+  /**
+   * Installs the update through PackageInstaller without asking when Android
+   * allows it (the app is the installer of record, Android 12+); otherwise
+   * Android shows its confirmation. The app restarts itself afterwards.
+   */
+  @ReactMethod
+  public void installSilently(String path, Promise promise) {
+    Context context = getReactApplicationContext();
+    try {
+      File apk = verifiedApk(context, path);
+      PackageInstaller installer = context.getPackageManager().getPackageInstaller();
+      PackageInstaller.SessionParams params =
+          new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+      params.setAppPackageName(context.getPackageName());
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+      }
+      if (Build.VERSION.SDK_INT >= 34) {
+        params.setRequestUpdateOwnership(true);
+      }
+      int sessionId = installer.createSession(params);
+      try (PackageInstaller.Session session = installer.openSession(sessionId)) {
+        try (InputStream in = new FileInputStream(apk);
+            OutputStream out = session.openWrite("base.apk", 0, apk.length())) {
+          byte[] buffer = new byte[64 * 1024];
+          int read;
+          while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+          }
+          session.fsync(out);
+        }
+        Intent callback = new Intent(context, HeliosUpdateReceivers.InstallResult.class);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          flags |= PendingIntent.FLAG_MUTABLE;
+        }
+        PendingIntent pending = PendingIntent.getBroadcast(context, sessionId, callback, flags);
+        HeliosUpdateReceivers.prefs(context)
+            .edit()
+            .putBoolean(HeliosUpdateReceivers.KEY_RELAUNCH, true)
+            .apply();
+        session.commit(pending.getIntentSender());
+      }
+      promise.resolve(true);
+    } catch (Exception e) {
+      promise.reject("E_INSTALL", e);
+    }
+  }
+
+  /** The APK file if it is this app, signed with the same key, in cache/install. */
+  private static File verifiedApk(Context context, String path) throws Exception {
+    File installDir = new File(context.getCacheDir(), "install").getCanonicalFile();
+    File apk = new File(path).getCanonicalFile();
+    if (!apk.isFile() || !installDir.equals(apk.getParentFile())) {
+      throw new SecurityException("APK must be in the app download folder");
+    }
+    PackageManager pm = context.getPackageManager();
+    PackageInfo archive = archiveInfo(pm, apk.getAbsolutePath());
+    if (archive == null || !context.getPackageName().equals(archive.packageName)) {
+      throw new SecurityException("The APK is not an update of this app");
+    }
+    if (!sameSigners(installedSigners(pm, context.getPackageName()), signersOf(archive))) {
+      throw new SecurityException("The APK is not signed with this app's key");
+    }
+    return apk;
   }
 
   @SuppressWarnings("deprecation")

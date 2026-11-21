@@ -1,5 +1,5 @@
 import { toast } from '@/components2024/Toast';
-import { installDownloadedApk } from '@/core/native/heliosApkInstaller';
+import { installUpdateSilently } from '@/core/native/heliosApkInstaller';
 import { downloadLatestApk } from '@/utils/version';
 
 let running = false;
@@ -20,12 +20,10 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
     const result = await downloadLatestApk({
       fromUrl: apkUrl,
       onProgress: ({ progressPercent }) => {
-        const step = Math.floor(progressPercent * 4); // 25% steps
-        if (step > lastStep && step < 4) {
+        const step = Math.floor(progressPercent * 2); // one toast at 50%
+        if (step > lastStep && step === 1) {
           lastStep = step;
-          if (step > 0) {
-            toast.info(`Downloading update… ${step * 25}%`);
-          }
+          toast.info('Downloading update… 50%');
         }
       },
     });
@@ -33,7 +31,8 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
       toast.info(`Download failed (HTTP ${result.downloadResult.statusCode})`);
       return;
     }
-    const outcome = await installDownloadedApk(result.downloadedApkPath);
+    toast.info('Installing update: the app will restart');
+    const outcome = await installUpdateSilently(result.downloadedApkPath);
     if (outcome === 'needs_permission') {
       toast.info(
         'Allow Helios Wallet to install apps, then start the update again',

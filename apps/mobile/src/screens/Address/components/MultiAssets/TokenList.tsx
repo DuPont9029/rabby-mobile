@@ -862,6 +862,7 @@ export const TokenList = () => {
   // The Solana account of the (first) seed-phrase address, with the tokens.
   const solanaHdAccounts = useSolanaHdAccounts();
   const solanaRows = useSolanaTokenRows(solanaHdAccounts[0]?.address);
+  const hasSolanaRows = solanaRows.rows.length > 0;
   const solanaItems = useMemo<TokenListExtraItem[]>(
     () => solanaRows.rows.map(data => ({ type: 'solana_asset', data })),
     [solanaRows.rows],
@@ -934,7 +935,10 @@ export const TokenList = () => {
       switch (item.type) {
         case 'token':
         case 'group': {
-          const isLast = index === section.data.length - 1;
+          // Solana rows continue the primary block with the same spacing.
+          const isLast =
+            index === section.data.length - 1 &&
+            !(section.key === 'primary' && hasSolanaRows);
           return (
             <View style={[styles.rowWrap, isLast ? styles.lastRowWrap : null]}>
               <TokenResourceRow
@@ -994,10 +998,16 @@ export const TokenList = () => {
           return <CustomTestnetAssetDivider />;
         case 'solana_asset':
           return (
-            <SolanaAssetRow
-              data={item.data}
-              onPress={() => solanaRows.onPress(item.data)}
-            />
+            <View
+              style={[
+                styles.rowWrap,
+                index === section.data.length - 1 ? styles.lastRowWrap : null,
+              ]}>
+              <SolanaAssetRow
+                data={item.data}
+                onPress={() => solanaRows.onPress(item.data)}
+              />
+            </View>
           );
         case 'empty-assets':
           return (
@@ -1033,6 +1043,7 @@ export const TokenList = () => {
       styles,
       showAllTokens,
       solanaRows,
+      hasSolanaRows,
       t,
     ],
   );

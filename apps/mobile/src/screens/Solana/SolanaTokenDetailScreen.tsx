@@ -12,7 +12,8 @@ import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 
-import RcIconSolanaCC from '@/assets2024/icons/home/IconSolanaCC.svg';
+import RcSolanaLogo from '@/assets2024/icons/solana/solana-logo.svg';
+import { SolanaTokenAvatar } from './SolanaTokenAvatar';
 import RcIconSendCC from '@/assets2024/singleHome/send.svg';
 import RcIconMoreCC from '@/assets/icons/home/more-cc.svg';
 import { ArrowCircleCC } from '@/assets2024/icons/address';
@@ -173,11 +174,7 @@ export const SolanaTokenDetailScreen = () => {
   const header = (
     <View>
       <View style={styles.chip}>
-        <RcIconSolanaCC
-          width={18}
-          height={18}
-          color={colors2024['neutral-title-1']}
-        />
+        <RcSolanaLogo width={18} height={18} />
         <Text style={styles.chipText}>
           {owner ? ellipsisAddress(owner) : '…'}
         </Text>
@@ -218,11 +215,7 @@ export const SolanaTokenDetailScreen = () => {
           style={styles.walletCard}
           onPress={() => naviPush(RootNames.SolanaHome, { evmAddress })}>
           <View style={styles.walletIcon}>
-            <RcIconSolanaCC
-              width={26}
-              height={26}
-              color={colors2024['neutral-title-1']}
-            />
+            <RcSolanaLogo width={30} height={30} />
           </View>
           <View style={styles.walletText}>
             <Text style={styles.walletName}>
@@ -266,10 +259,12 @@ export const SolanaTokenDetailScreen = () => {
     return (
       <View style={[styles.txCard, item.failed && styles.txFailed]}>
         <View style={styles.txIcon}>
-          <RcIconSolanaCC
-            width={24}
-            height={24}
-            color={colors2024['neutral-title-1']}
+          <SolanaTokenAvatar
+            mint={mint}
+            metadataUri={token?.uri}
+            symbol={symbol}
+            size={46}
+            badgeSize={16}
           />
         </View>
         <View style={styles.txText}>
@@ -313,10 +308,12 @@ export const SolanaTokenDetailScreen = () => {
         <HeaderBackButton tintColor={colors2024['neutral-title-1']} />
         <View style={styles.headerToken}>
           <View style={styles.headerLogo}>
-            <RcIconSolanaCC
-              width={22}
-              height={22}
-              color={colors2024['neutral-title-1']}
+            <SolanaTokenAvatar
+              mint={mint}
+              metadataUri={token?.uri}
+              symbol={symbol}
+              size={33}
+              badgeSize={14}
             />
           </View>
           <Text style={styles.headerSymbol}>{symbol}</Text>
@@ -435,7 +432,6 @@ const getStyle = createGetStyles2024(
     },
     headerRow: {
       height: 48,
-      marginTop: safeAreaInsets.top,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 14,
@@ -447,14 +443,7 @@ const getStyle = createGetStyles2024(
       alignItems: 'center',
       gap: 8,
     },
-    headerLogo: {
-      width: 33,
-      height: 33,
-      borderRadius: 17,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors2024['neutral-bg-5'],
-    },
+    headerLogo: { width: 33, height: 33 },
     headerSymbol: {
       fontSize: 20,
       fontWeight: '900',
@@ -584,14 +573,7 @@ const getStyle = createGetStyles2024(
         : colors2024['neutral-bg-2'],
     },
     txFailed: { opacity: 0.5 },
-    txIcon: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors2024['neutral-bg-5'],
-    },
+    txIcon: { width: 46, height: 46 },
     txText: { flex: 1 },
     txTitle: {
       fontSize: 17,

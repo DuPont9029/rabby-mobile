@@ -51,7 +51,7 @@ export const SolanaHomeScreen = () => {
 
   useEffect(() => {
     if (!evmAddress && hdAccounts.length) {
-      setEvmAddress(hdAccounts[0].address);
+      setEvmAddress(hdAccounts[0]!.address);
     }
   }, [evmAddress, hdAccounts]);
 

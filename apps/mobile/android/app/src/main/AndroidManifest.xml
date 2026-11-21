@@ -63,6 +63,17 @@
         <data android:host="@string/rabbygo_httpdomain" android:pathPrefix="@string/rabbygo_pathprefix" />
       </intent-filter>
     </activity>
+    <!-- Helios Wallet self-update: install result and relaunch after update. -->
+    <receiver
+      android:name=".HeliosUpdateReceivers$InstallResult"
+      android:exported="false" />
+    <receiver
+      android:name=".HeliosUpdateReceivers$PackageReplaced"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+      </intent-filter>
+    </receiver>
     <provider
       android:name="androidx.core.content.FileProvider"
       android:authorities="${applicationId}.provider"
