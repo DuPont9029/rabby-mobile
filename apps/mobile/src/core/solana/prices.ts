@@ -126,6 +126,13 @@ export const getCachedUsdPrice = (
   const value = (
     mint ? getPoolUsdPrice(rpc, mint, decimals) : getSolUsdPrice()
   ).catch(() => null);
-  priceCache.set(key, { at: Date.now(), value });
+  const entry = { at: Date.now(), value };
+  priceCache.set(key, entry);
+  // A miss (often a rate-limited public RPC) is not cached.
+  value.then(price => {
+    if (price === null && priceCache.get(key) === entry) {
+      priceCache.delete(key);
+    }
+  });
   return value;
 };

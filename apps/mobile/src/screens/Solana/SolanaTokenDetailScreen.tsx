@@ -30,7 +30,7 @@ import {
 import { associatedTokenAddress } from '@/core/solana/tx';
 import { formatAmount } from '@/core/solana/transfer';
 import { loadSolanaHistory, SolanaHistoryItem } from '@/core/solana/history';
-import { getPoolUsdPrice, getSolUsdPrice } from '@/core/solana/prices';
+import { getCachedUsdPrice } from '@/core/solana/prices';
 import { getSolanaRpc } from '@/core/solana/settings';
 import { HeaderBackButton } from '@/hooks/navigation';
 import { useTheme2024 } from '@/hooks/theme';
@@ -90,18 +90,39 @@ export const SolanaTokenDetailScreen = () => {
     rawBalance === null ? 0 : Number(formatAmount(rawBalance, decimals, 9));
 
   const [price, setPrice] = useState<number | null>(null);
+  const tokenMint = token?.mint;
+  const tokenDecimals = token?.decimals;
   useEffect(() => {
+    if (!isSol && !tokenMint) {
+      return;
+    }
     let active = true;
-    const load = isSol
-      ? getSolUsdPrice()
-      : token
-      ? getPoolUsdPrice(getSolanaRpc(), token.mint, token.decimals)
-      : Promise.resolve(null);
-    load.then(value => active && setPrice(value)).catch(() => {});
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const delays = [3_000, 8_000, 20_000];
+    const attempt = (n: number) => {
+      getCachedUsdPrice(
+        getSolanaRpc(),
+        isSol ? null : tokenMint!,
+        isSol ? 9 : tokenDecimals,
+      ).then(value => {
+        if (!active) {
+          return;
+        }
+        if (value !== null) {
+          setPrice(value);
+        } else if (delays[n] !== undefined) {
+          timer = setTimeout(() => attempt(n + 1), delays[n]);
+        }
+      });
+    };
+    attempt(0);
     return () => {
       active = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
-  }, [isSol, token]);
+  }, [isSol, tokenMint, tokenDecimals]);
 
   const [history, setHistory] = useState<SolanaHistoryItem[] | null>(null);
   useEffect(() => {

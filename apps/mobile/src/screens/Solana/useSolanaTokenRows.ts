@@ -157,14 +157,14 @@ export const useSolanaTokenRows = (evmAddress?: string) => {
       if (!evmAddress) {
         return;
       }
+      // Always the token detail (SOL while still loading), never the old
+      // account screen.
       const isToken = !!row?.mint;
       navigationRef.current?.dispatch(
-        row && (row.key === 'sol' || isToken)
-          ? StackActions.push(RootNames.SolanaTokenDetail, {
-              evmAddress,
-              ...(isToken ? { mint: row.mint, symbol: row.symbol } : {}),
-            })
-          : StackActions.push(RootNames.SolanaHome, { evmAddress }),
+        StackActions.push(RootNames.SolanaTokenDetail, {
+          evmAddress,
+          ...(isToken ? { mint: row!.mint, symbol: row!.symbol } : {}),
+        }),
       );
     },
     [evmAddress, unlockPrompt],
