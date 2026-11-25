@@ -1,5 +1,6 @@
 package com.debank.rabbymobile;
 
+import android.app.ActivityOptions;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 
 import androidx.annotation.NonNull;
@@ -141,16 +143,25 @@ public class HeliosApkInstallerModule extends ReactContextBaseJavaModule {
           }
           session.fsync(out);
         }
-        Intent callback = new Intent(context, HeliosUpdateReceivers.InstallResult.class);
+        // The result goes to an activity started by the system: it can show
+        // a required confirmation and reopen the app after the update
+        // (an app in background may not start activities itself).
+        Intent callback = new Intent(context, HeliosUpdateResultActivity.class);
+        callback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           flags |= PendingIntent.FLAG_MUTABLE;
         }
-        PendingIntent pending = PendingIntent.getBroadcast(context, sessionId, callback, flags);
-        HeliosUpdateReceivers.prefs(context)
-            .edit()
-            .putBoolean(HeliosUpdateReceivers.KEY_RELAUNCH, true)
-            .apply();
+        Bundle options = null;
+        if (Build.VERSION.SDK_INT >= 34) {
+          options =
+              ActivityOptions.makeBasic()
+                  .setPendingIntentCreatorBackgroundActivityStartMode(
+                      ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                  .toBundle();
+        }
+        PendingIntent pending =
+            PendingIntent.getActivity(context, sessionId, callback, flags, options);
         session.commit(pending.getIntentSender());
       }
       promise.resolve(true);

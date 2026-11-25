@@ -234,7 +234,10 @@ export const SolanaTokenDetailScreen = () => {
         </Text>
         <Pressable
           style={styles.walletCard}
-          onPress={() => naviPush(RootNames.SolanaHome, { evmAddress })}>
+          disabled={isSol}
+          onPress={() =>
+            naviPush(RootNames.SolanaTokenDetail, { evmAddress })
+          }>
           <View style={styles.walletIcon}>
             <RcSolanaLogo width={30} height={30} />
           </View>
@@ -246,11 +249,13 @@ export const SolanaTokenDetailScreen = () => {
               {price !== null ? usd(price * amount) : `${amount} ${symbol}`}
             </Text>
           </View>
-          <ArrowCircleCC
-            style={styles.walletArrow}
-            color={colors2024['neutral-body']}
-            backgroundColor={colors2024['neutral-bg-5']}
-          />
+          {!isSol ? (
+            <ArrowCircleCC
+              style={styles.walletArrow}
+              color={colors2024['neutral-body']}
+              backgroundColor={colors2024['neutral-bg-5']}
+            />
+          ) : null}
         </Pressable>
       </View>
       <Text style={styles.sectionTitle}>
@@ -433,8 +438,8 @@ export const SolanaTokenDetailScreen = () => {
             : []),
           {
             key: 'account',
-            title: t('page.solana.openAccount', {
-              defaultValue: 'Solana account',
+            title: t('page.solana.settings', {
+              defaultValue: 'Solana settings (RPC, NFTs)',
             }),
             onPress: () => naviPush(RootNames.SolanaHome, { evmAddress }),
           },
