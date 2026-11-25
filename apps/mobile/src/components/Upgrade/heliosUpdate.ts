@@ -1,3 +1,4 @@
+import { PermissionsAndroid, Platform } from 'react-native';
 import { toast } from '@/components2024/Toast';
 import { installUpdateSilently } from '@/core/native/heliosApkInstaller';
 import { downloadLatestApk } from '@/utils/version';
@@ -16,6 +17,13 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
   running = true;
   let lastStep = -1;
   try {
+    // Once: allow the "updated, tap to open" notification (Android 13+).
+    // Android 15 does not let an app reopen itself after an update.
+    if (Platform.OS === 'android' && Number(Platform.Version) >= 33) {
+      await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      ).catch(() => undefined);
+    }
     toast.info('Downloading update…');
     const result = await downloadLatestApk({
       fromUrl: apkUrl,
@@ -31,7 +39,7 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
       toast.info(`Download failed (HTTP ${result.downloadResult.statusCode})`);
       return;
     }
-    toast.info('Installing update: the app will restart');
+    toast.info('Installing update…');
     const outcome = await installUpdateSilently(result.downloadedApkPath);
     if (outcome === 'needs_permission') {
       toast.info(
