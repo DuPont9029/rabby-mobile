@@ -148,7 +148,10 @@ jobs:
           {
             echo "## Helios Wallet ${GITHUB_SHA::7}"
             echo
-            git log -1 --pretty='%s%n%n%b' "$GITHUB_SHA" | grep -v '^Co-Authored-By:'
+            # Commit body without hard line wraps (continuation lines joined).
+            git log -1 --pretty='%s%n%n%b' "$GITHUB_SHA" | grep -v '^Co-Authored-By:' \
+              | awk 'BEGIN{line=""} /^$/ {if(line!=""){print line; line=""} print ""; next} /^- / {if(line!="")print line; line=$0; next} {line = (line=="" ? $0 : line " " $0)} END{if(line!="")print line}' \
+              | sed -E 's/^ +//; s/  +/ /g'
             echo
             echo "arm64-v8a, signed with the fork owner's key; updates earlier Helios Wallet builds in place."
           } > release-notes.md
