@@ -1,6 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { randomBytes } from '@noble/hashes/utils';
 
@@ -158,6 +164,14 @@ export const WormholeBridgeScreen = () => {
     route.params?.receive ?? 'WETH',
   );
   const toArio = receive === 'ARIO';
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: toArio
+        ? t('page.wormhole.titleArio', { defaultValue: 'ETH → ARIO' })
+        : t('page.wormhole.title', { defaultValue: 'ETH → Solana' }),
+    });
+  }, [navigation, t, toArio]);
   const { accounts } = useMyAccounts();
   const account = useMemo(
     () =>
@@ -295,11 +309,6 @@ export const WormholeBridgeScreen = () => {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>
-        {toArio
-          ? t('page.wormhole.titleArio', { defaultValue: 'ETH → ARIO' })
-          : t('page.wormhole.title', { defaultValue: 'ETH → Solana' })}
-      </Text>
       <Text style={styles.muted}>
         {toArio
           ? t('page.wormhole.introArio', {
@@ -488,11 +497,6 @@ export const WormholeBridgeScreen = () => {
 const getStyle = createGetStyles2024(({ colors2024 }) => ({
   screen: { flex: 1, backgroundColor: colors2024['neutral-bg-1'] },
   content: { padding: 16, gap: 16 },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors2024['neutral-title-1'],
-  },
   card: {
     padding: 16,
     gap: 10,

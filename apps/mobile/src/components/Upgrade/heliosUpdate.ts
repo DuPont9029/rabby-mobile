@@ -19,11 +19,14 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
   try {
     // Once: allow the "updated, tap to open" notification (Android 13+).
     // Android 15 does not let an app reopen itself after an update.
-    if (Platform.OS === 'android' && Number(Platform.Version) >= 33) {
-      await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-      ).catch(() => undefined);
-    }
+    // Asked while the APK downloads; the install waits for the answer so the
+    // notification can be shown right after it.
+    const notificationPermission =
+      Platform.OS === 'android' && Number(Platform.Version) >= 33
+        ? PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          ).catch(() => undefined)
+        : Promise.resolve(undefined);
     toast.info('Downloading update…');
     const result = await downloadLatestApk({
       fromUrl: apkUrl,
@@ -39,6 +42,7 @@ export const downloadAndInstallHeliosUpdate = async (apkUrl: string) => {
       toast.info(`Download failed (HTTP ${result.downloadResult.statusCode})`);
       return;
     }
+    await notificationPermission;
     toast.info('Installing update…');
     const outcome = await installUpdateSilently(result.downloadedApkPath);
     if (outcome === 'needs_permission') {

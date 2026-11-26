@@ -382,8 +382,8 @@ export const SolanaTokenDetailScreen = () => {
           </Pressable>
           {isArio ? (
             <Pressable style={styles.action} onPress={buyArio}>
-              <Text style={styles.actionText}>
-                {t('page.solana.buyWithEth', { defaultValue: 'Buy with ETH' })}
+              <Text style={styles.actionText} numberOfLines={1}>
+                {t('page.solana.buy', { defaultValue: 'Buy' })}
               </Text>
             </Pressable>
           ) : null}
