@@ -328,16 +328,42 @@ export const createSolanaRpc = (
       { limit: Math.min(Math.max(limit, 1), 100), commitment: 'confirmed' },
     ]);
 
+  /**
+   * Highest transaction version this endpoint accepts: 1 (same jsonParsed
+   * shape as v0); lowered to 0 once if an older endpoint rejects it.
+   */
+  let maxTransactionVersion = 1;
+
   /** A transaction with parsed balances (null while unknown). */
-  const getParsedTransaction = (signature: string) =>
-    call<ParsedTransaction | null>('getTransaction', [
-      signature,
-      {
-        encoding: 'jsonParsed',
-        commitment: 'confirmed',
-        maxSupportedTransactionVersion: 0,
-      },
-    ]);
+  const getParsedTransaction = async (
+    signature: string,
+  ): Promise<ParsedTransaction | null> => {
+    const fetchWith = (version: number) =>
+      call<ParsedTransaction | null>('getTransaction', [
+        signature,
+        {
+          encoding: 'jsonParsed',
+          commitment: 'confirmed',
+          maxSupportedTransactionVersion: version,
+        },
+      ]);
+    try {
+      return await fetchWith(maxTransactionVersion);
+    } catch (error) {
+      if (
+        maxTransactionVersion > 0 &&
+        error instanceof SolanaRpcError &&
+        /maxSupportedTransactionVersion|transaction version/i.test(
+          error.message,
+        ) &&
+        !/not supported by the requesting client/i.test(error.message)
+      ) {
+        maxTransactionVersion = 0;
+        return fetchWith(0);
+      }
+      throw error;
+    }
+  };
 
   return {
     endpoint,

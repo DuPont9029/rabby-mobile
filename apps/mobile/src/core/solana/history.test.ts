@@ -1,4 +1,5 @@
 import tx from './__fixtures__/devnet-redeem-tx.json';
+import v1Tx from './__fixtures__/mainnet-v1-tx.json';
 import { transferFromTransaction } from './history';
 import type { ParsedTransaction } from './rpc';
 
@@ -39,5 +40,18 @@ describe('Solana history parsing (recorded devnet transaction)', () => {
         'sig',
       ),
     ).toBeNull();
+  });
+});
+
+describe('Solana history parsing (recorded mainnet v1 transaction)', () => {
+  it('reads version 1 transactions like v0', () => {
+    const item = transferFromTransaction(
+      v1Tx as unknown as ParsedTransaction,
+      '9Smty8TzMEooLfAMxPAPomBmjNUqHGRpkRTphkbXJvoC',
+      { kind: 'token', mint: 'AuGHNhb2ZFz62CHpkzmTutqrh75dUVGN91yFEU3fpump' },
+      'sig',
+    )!;
+    expect(item.delta).toBe(-216130186887n);
+    expect(item.failed).toBe(false);
   });
 });
