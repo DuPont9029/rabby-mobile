@@ -2,8 +2,12 @@
  * ETH → Solana bridge transfers (Wormhole Token Bridge), persisted locally
  * and advanced automatically:
  *
- *   pending_eth → waiting_guardians → redeeming → completed
+ *   pending_eth → waiting_guardians → redeeming → [swapping →] completed
  *                                   ↘ needs_sol (top up SOL, then retried)
+ *
+ * With `swapTo: 'ARIO'` the redeemed WETH is swapped on Raydium
+ * (WETH → SOL → USDC → ARIO) right after the redeem, one resumable hop at a
+ * time (see core/solana/raydiumSwap).
  *
  * Every step re-checks the chain, so the flow survives app restarts and
  * never redeems twice.
@@ -15,6 +19,14 @@ import { Buffer } from 'buffer';
 import { appJsonStore } from '@/core/storage/mmkv';
 import { getSolanaAccount } from '@/core/solana/account';
 import { encodeAddress } from '@/core/solana/keys';
+import { WETH_TO_ARIO } from '@/core/solana/raydium';
+import {
+  advanceSwap,
+  isSwapDone,
+  startSwap,
+  SwapError,
+  SwapProgress,
+} from '@/core/solana/raydiumSwap';
 import { getSolanaRpc } from '@/core/solana/settings';
 
 import { WORMHOLE } from './constants';
@@ -40,6 +52,7 @@ export type BridgeStatus =
   | 'waiting_guardians'
   | 'redeeming'
   | 'needs_sol'
+  | 'swapping'
   | 'completed'
   | 'failed';
 
@@ -55,7 +68,19 @@ export type BridgeTransfer = {
   error?: string;
   solanaSignatures?: string[];
   updatedAt?: number;
+  /** Swap the redeemed WETH into this token after the redeem. */
+  swapTo?: 'ARIO';
+  swapSlippageBps?: number;
+  swap?: SwapProgress;
+  /** Final amount received in `swapTo` (raw units), once done. */
+  swapReceived?: string;
+  /** The swap was stopped: the funds were kept as this token. */
+  swapStoppedAs?: string;
 };
+
+/** Token held at each step of the ARIO route (what a stop keeps). */
+export const SWAP_STEP_TOKENS = ['WETH', 'SOL', 'USDC', 'ARIO'] as const;
+export const ARIO_DECIMALS = 6;
 
 const STORAGE_KEY = 'helios:wormholeTransfers:v1';
 const MAX_KEPT = 50;
@@ -90,6 +115,23 @@ const update = (ethTxHash: string, patch: Partial<BridgeTransfer>) => {
       t.ethTxHash === ethTxHash ? { ...t, ...patch, updatedAt: Date.now() } : t,
     ),
   );
+};
+
+/** Stops a pending swap and keeps the funds as the token held right now. */
+export const stopBridgeSwap = (ethTxHash: string) => {
+  const transfer = readAll().find(t => t.ethTxHash === ethTxHash);
+  if (!transfer || !transfer.swapTo || isFinal(transfer.status)) {
+    return;
+  }
+  if (transfer.swap?.pending) {
+    return; // a hop is in flight: it settles first
+  }
+  update(ethTxHash, {
+    status: transfer.status === 'swapping' ? 'completed' : transfer.status,
+    swapTo: undefined,
+    swapStoppedAs: SWAP_STEP_TOKENS[transfer.swap?.hop ?? 0],
+    error: undefined,
+  });
 };
 
 export const isFinal = (status: BridgeStatus) =>
@@ -184,6 +226,53 @@ export const checkTransferVaa = async (
 
 // ---- engine -----------------------------------------------------------------
 
+/** Runs the post-redeem swap as far as possible; errors are retried later. */
+const runSwap = async (transfer: BridgeTransfer) => {
+  const route = WETH_TO_ARIO;
+  let progress = transfer.swap!;
+  try {
+    const account = await getSolanaAccount(transfer.evmAddress);
+    if (account.address !== transfer.solanaOwner) {
+      throw new Error('The Solana account no longer matches this transfer.');
+    }
+    progress = await advanceSwap({
+      rpc: getSolanaRpc(),
+      account,
+      route,
+      progress,
+      slippageBps: transfer.swapSlippageBps,
+      save: next => update(transfer.ethTxHash, { swap: next }),
+    });
+    if (isSwapDone(route, progress)) {
+      update(transfer.ethTxHash, {
+        status: 'completed',
+        error: undefined,
+        swap: progress,
+        swapReceived: progress.amount,
+      });
+    }
+  } catch (error) {
+    if (error instanceof SwapError && error.code === 'input_missing') {
+      // The tokens of this step were moved elsewhere: nothing more to do.
+      update(transfer.ethTxHash, {
+        status: 'completed',
+        swapTo: undefined,
+        swapStoppedAs: SWAP_STEP_TOKENS[progress.hop],
+        error: error.message,
+      });
+      return;
+    }
+    update(transfer.ethTxHash, {
+      error:
+        error instanceof SwapError && error.code === 'needs_sol'
+          ? 'Needs about 0.003 SOL for the swap fees (refunded rent included).'
+          : error instanceof Error
+          ? error.message
+          : 'swap failed',
+    });
+  }
+};
+
 const running = new Set<string>();
 
 /** Advances one transfer as far as possible right now. */
@@ -194,6 +283,10 @@ export const advanceBridgeTransfer = async (transfer: BridgeTransfer) => {
   running.add(transfer.ethTxHash);
   try {
     let current = transfer;
+    if (current.status === 'swapping') {
+      await runSwap(current);
+      return;
+    }
     if (current.status === 'pending_eth') {
       const receipt = await getReceipt(current.ethTxHash);
       if (!receipt) {
@@ -256,13 +349,28 @@ export const advanceBridgeTransfer = async (transfer: BridgeTransfer) => {
         vaa: checked.vaa,
         guardianKeys: checked.guardianKeys,
       });
+      const signatures = [
+        ...(current.solanaSignatures || []),
+        ...result.signatures,
+      ];
+      if (current.swapTo) {
+        const swapping: BridgeTransfer = {
+          ...current,
+          status: 'swapping',
+          error: undefined,
+          solanaSignatures: signatures,
+          swap:
+            current.swap ||
+            startSwap(BigInt(current.amountWei) / WEI_PER_WRAPPED_UNIT),
+        };
+        update(current.ethTxHash, swapping);
+        await runSwap(swapping);
+        return;
+      }
       update(current.ethTxHash, {
         status: 'completed',
         error: undefined,
-        solanaSignatures: [
-          ...(current.solanaSignatures || []),
-          ...result.signatures,
-        ],
+        solanaSignatures: signatures,
       });
     } catch (error) {
       const needsSol =

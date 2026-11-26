@@ -179,6 +179,25 @@ export const createAssociatedTokenAccountIdempotent = (
   data: Uint8Array.of(1),
 });
 
+/**
+ * SPL Token `CloseAccount`: deletes an empty token account and sends its
+ * rent (and, for wrapped SOL, the wrapped lamports) to `destination`.
+ */
+export const closeTokenAccount = (
+  account: string,
+  destination: string,
+  owner: string,
+  tokenProgram: string = PROGRAM_IDS.token,
+): Instruction => ({
+  programId: tokenProgram,
+  keys: [
+    meta(account, false, true),
+    meta(destination, false, true),
+    meta(owner, true, false),
+  ],
+  data: Uint8Array.of(9),
+});
+
 /** SPL Token / Token-2022 `TransferChecked`. */
 export const tokenTransferChecked = ({
   source,

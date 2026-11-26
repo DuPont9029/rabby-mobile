@@ -27,6 +27,7 @@ import {
   getBottomButtonBottomOffset,
   RootNames,
 } from '@/constant/layout';
+import { MINTS } from '@/core/solana/raydium';
 import { associatedTokenAddress } from '@/core/solana/tx';
 import { formatAmount } from '@/core/solana/transfer';
 import { loadSolanaHistory, SolanaHistoryItem } from '@/core/solana/history';
@@ -66,6 +67,9 @@ export const SolanaTokenDetailScreen = () => {
   const route = useRoute<GetRootScreenRouteProp<'SolanaTokenDetail'>>();
   const { evmAddress, mint } = route.params;
   const isSol = !mint;
+  const isArio = mint === MINTS.ario;
+  const buyArio = () =>
+    naviPush(RootNames.WormholeBridge, { evmAddress, receive: 'ARIO' });
 
   const account = useSolanaAccount(evmAddress);
   useSolanaUnlockPrompt(account, { auto: true });
@@ -235,9 +239,7 @@ export const SolanaTokenDetailScreen = () => {
         <Pressable
           style={styles.walletCard}
           disabled={isSol}
-          onPress={() =>
-            naviPush(RootNames.SolanaTokenDetail, { evmAddress })
-          }>
+          onPress={() => naviPush(RootNames.SolanaTokenDetail, { evmAddress })}>
           <View style={styles.walletIcon}>
             <RcSolanaLogo width={30} height={30} />
           </View>
@@ -378,6 +380,13 @@ export const SolanaTokenDetailScreen = () => {
               {t('page.home.services.send', { defaultValue: 'Send' })}
             </Text>
           </Pressable>
+          {isArio ? (
+            <Pressable style={styles.action} onPress={buyArio}>
+              <Text style={styles.actionText}>
+                {t('page.solana.buyWithEth', { defaultValue: 'Buy with ETH' })}
+              </Text>
+            </Pressable>
+          ) : null}
           <Pressable
             style={[styles.action, styles.blueAction]}
             onPress={() => {
@@ -424,6 +433,17 @@ export const SolanaTokenDetailScreen = () => {
               }
             },
           },
+          ...(isArio
+            ? [
+                {
+                  key: 'buyArio',
+                  title: t('page.solana.buyArioWithEth', {
+                    defaultValue: 'Buy ARIO with ETH',
+                  }),
+                  onPress: buyArio,
+                },
+              ]
+            : []),
           ...(isSol
             ? [
                 {
